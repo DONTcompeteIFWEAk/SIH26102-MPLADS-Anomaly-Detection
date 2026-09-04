@@ -16,20 +16,21 @@ from database import SessionLocal
 from db_models import Project
 
 
-# CSV file containing final ML + rule risk results
+# CSV containing the new hybrid ML + rule risk results
 CSV_PATH = os.path.join(
     PROJECT_ROOT,
     "data",
-    "final_risk_results.csv"
+    "hybrid_risk_results.csv"
 )
 
 
 def load_projects():
-    print("Loading data into PostgreSQL...")
+
+    print("Loading HYBRID risk data into PostgreSQL...")
 
     # Check if CSV exists
     if not os.path.exists(CSV_PATH):
-        print(f"ERROR: CSV file not found:")
+        print("ERROR: CSV file not found:")
         print(CSV_PATH)
         return
 
@@ -38,24 +39,47 @@ def load_projects():
 
     print(f"Found {len(df)} projects in CSV.")
 
+    # Show columns for verification
+    print("\nCSV columns:")
+    print(list(df.columns))
+
     db = SessionLocal()
 
     try:
-        # Clear existing projects
-        print("Clearing existing project records...")
+
+        # --------------------------------------------------
+        # CLEAR OLD PROJECT DATA
+        # --------------------------------------------------
+
+        print("\nClearing existing project records...")
 
         db.query(Project).delete()
 
-        # Insert projects
-        print("Inserting projects...")
+        # --------------------------------------------------
+        # INSERT NEW HYBRID RESULTS
+        # --------------------------------------------------
+
+        print("Inserting hybrid risk projects...")
 
         for _, row in df.iterrows():
 
             project = Project(
-                project_id=str(row["project_id"]),
-                state=str(row["state"]),
-                district=str(row["district"]),
-                constituency=str(row["constituency"]),
+
+                project_id=str(
+                    row["project_id"]
+                ),
+
+                state=str(
+                    row["state"]
+                ),
+
+                district=str(
+                    row["district"]
+                ),
+
+                constituency=str(
+                    row["constituency"]
+                ),
 
                 sanctioned_amount=float(
                     row["sanctioned_amount"]
@@ -85,7 +109,8 @@ def load_projects():
                     row["implementing_agency"]
                 ),
 
-                uc_available=int(
+                # PostgreSQL column is BOOLEAN
+                uc_available=bool(
                     row["uc_available"]
                 ),
 
@@ -93,8 +118,12 @@ def load_projects():
                     row["uc_amount"]
                 ),
 
+                # --------------------------------------------------
+                # NEW HYBRID RISK VALUES
+                # --------------------------------------------------
+
                 ml_risk_score=float(
-                    row["ml_risk_score"]
+                    row["ensemble_ml_risk"]
                 ),
 
                 rule_risk_score=float(
@@ -102,28 +131,34 @@ def load_projects():
                 ),
 
                 risk_score=float(
-                    row["risk_score"]
+                    row["hybrid_risk_score"]
                 ),
 
                 risk_level=str(
-                    row["risk_level"]
+                    row["hybrid_risk_level"]
                 ),
 
                 risk_explanation=str(
-                    row["risk_explanation"]
+                    row["hybrid_explanation"]
                 )
             )
 
             db.add(project)
 
-        # Save everything
+        # --------------------------------------------------
+        # COMMIT
+        # --------------------------------------------------
+
         db.commit()
 
         print()
-        print("===================================")
-        print("Database loading completed!")
+        print("==============================================")
+        print("HYBRID DATABASE LOADING COMPLETED!")
+        print("==============================================")
         print(f"Successfully loaded {len(df)} projects.")
-        print("===================================")
+        print("Source:")
+        print("data/hybrid_risk_results.csv")
+        print("==============================================")
 
     except Exception as e:
 
@@ -134,6 +169,7 @@ def load_projects():
         print(e)
 
     finally:
+
         db.close()
 
 
