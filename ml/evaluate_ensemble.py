@@ -1,4 +1,68 @@
 import pandas as pd
+import numpy as np
+import os
+
+
+# =========================================================
+# SIH26102 - ENSEMBLE MODEL EVALUATION
+# =========================================================
+
+print("=" * 60)
+print("SIH26102 ENSEMBLE MODEL EVALUATION")
+print("=" * 60)
+
+
+# ---------------------------------------------------------
+# 1. LOAD RESULTS
+# ---------------------------------------------------------
+
+input_path = "data/ensemble_results.csv"
+
+if not os.path.exists(input_path):
+
+    print(
+        f"\nERROR: Ensemble results not found:"
+        f"\n{input_path}"
+    )
+
+    print(
+        "\nRun:"
+    )
+
+    print(
+        "python ml/ensemble_model.py"
+    )
+
+    raise SystemExit(1)
+
+
+df = pd.read_csv(
+    input_path
+)
+
+
+# ---------------------------------------------------------
+# 2. CHECK GROUND TRUTH
+# ---------------------------------------------------------
+
+if "actual_anomaly" not in df.columns:
+
+    print(
+        "\nERROR: actual_anomaly column not found."
+    )
+
+    print(
+        "\nThis evaluation requires the synthetic "
+        "ground-truth labels."
+    )
+
+    raise SystemExit(1)
+
+
+# ---------------------------------------------------------
+# 3. IMPORT METRICS
+# ---------------------------------------------------------
+
 from sklearn.metrics import (
     precision_score,
     recall_score,
@@ -7,43 +71,24 @@ from sklearn.metrics import (
     classification_report
 )
 
-print("=" * 60)
-print("SIH26102 ML ENSEMBLE EVALUATION")
-print("=" * 60)
 
 # ---------------------------------------------------------
-# LOAD RESULTS
+# 4. ACTUAL + PREDICTED
 # ---------------------------------------------------------
 
-df = pd.read_csv("data/ensemble_results.csv")
+y_true = (
+    df["actual_anomaly"]
+    .astype(int)
+)
 
-print(f"\nTotal projects: {len(df)}")
+y_pred = (
+    df["ensemble_anomaly"]
+    .astype(int)
+)
 
-# ---------------------------------------------------------
-# GROUND TRUTH
-# ---------------------------------------------------------
-
-y_true = df["actual_anomaly"].astype(int)
-
-# ---------------------------------------------------------
-# ENSEMBLE PREDICTION
-# ---------------------------------------------------------
-
-y_pred = df["ensemble_anomaly"].astype(int)
 
 # ---------------------------------------------------------
-# COUNTS
-# ---------------------------------------------------------
-
-print("\n" + "-" * 60)
-print("ANOMALY COUNTS")
-print("-" * 60)
-
-print(f"Known synthetic anomalies : {y_true.sum()}")
-print(f"Ensemble detected anomalies: {y_pred.sum()}")
-
-# ---------------------------------------------------------
-# PERFORMANCE
+# 5. CALCULATE METRICS
 # ---------------------------------------------------------
 
 precision = precision_score(
@@ -64,47 +109,90 @@ f1 = f1_score(
     zero_division=0
 )
 
-print("\n" + "-" * 60)
-print("MODEL PERFORMANCE")
-print("-" * 60)
-
-print(f"Precision : {precision:.4f}")
-print(f"Recall    : {recall:.4f}")
-print(f"F1 Score  : {f1:.4f}")
 
 # ---------------------------------------------------------
-# CONFUSION MATRIX
+# 6. CONFUSION MATRIX
 # ---------------------------------------------------------
 
-cm = confusion_matrix(
+tn, fp, fn, tp = confusion_matrix(
     y_true,
     y_pred,
     labels=[0, 1]
-)
+).ravel()
 
-print("\n" + "-" * 60)
-print("CONFUSION MATRIX")
-print("-" * 60)
 
-print("                Predicted Normal   Predicted Anomaly")
+# ---------------------------------------------------------
+# 7. DISPLAY MAIN RESULTS
+# ---------------------------------------------------------
 
 print(
-    f"Actual Normal       {cm[0][0]:>6}"
-    f"              {cm[0][1]:>6}"
+    "\n" + "-" * 60
 )
 
 print(
-    f"Actual Anomaly      {cm[1][0]:>6}"
-    f"              {cm[1][1]:>6}"
+    "OVERALL PERFORMANCE"
 )
 
+print(
+    "-" * 60
+)
+
+print(
+    f"Total projects : {len(df)}"
+)
+
+print(
+    f"Actual anomalies : {int(y_true.sum())}"
+)
+
+print(
+    f"Predicted anomalies: {int(y_pred.sum())}"
+)
+
+print(
+    f"\nTrue Positives  : {tp}"
+)
+
+print(
+    f"False Positives : {fp}"
+)
+
+print(
+    f"False Negatives : {fn}"
+)
+
+print(
+    f"True Negatives  : {tn}"
+)
+
+print(
+    f"\nPrecision : {precision:.4f}"
+)
+
+print(
+    f"Recall    : {recall:.4f}"
+)
+
+print(
+    f"F1 Score  : {f1:.4f}"
+)
+
+
 # ---------------------------------------------------------
-# CLASSIFICATION REPORT
+# 8. CLASSIFICATION REPORT
 # ---------------------------------------------------------
 
-print("\n" + "-" * 60)
-print("CLASSIFICATION REPORT")
-print("-" * 60)
+print(
+    "\n" + "-" * 60
+)
+
+print(
+    "CLASSIFICATION REPORT"
+)
+
+print(
+    "-" * 60
+)
 
 print(
     classification_report(
@@ -118,179 +206,317 @@ print(
     )
 )
 
-# ---------------------------------------------------------
-# ANOMALY TYPE
-# ---------------------------------------------------------
 
-def get_anomaly_type(row):
+# =========================================================
+# 9. ANOMALY TYPE ANALYSIS
+# =========================================================
 
-    if row["actual_anomaly"] == 0:
-        return "Normal"
-
-    if (
-        row["actual_expenditure"]
-        > row["sanctioned_amount"]
-    ):
-        return "Excess Expenditure"
-
-    if row["completion_delay_days"] >= 300:
-        return "Large Delay"
-
-    if row["missing_uc"] == 1:
-        return "Missing UC"
-
-    if (
-        row["uc_available"] == 1
-        and abs(
-            row["uc_expenditure_difference"]
-        ) > 0.20 *
-        row["actual_expenditure"]
-    ):
-        return "UC Mismatch"
-
-    return "Other Anomaly"
-
-
-df["anomaly_type"] = df.apply(
-    get_anomaly_type,
-    axis=1
+print(
+    "-" * 60
 )
 
+print(
+    "ANOMALY TYPE DETECTION"
+)
+
+print(
+    "-" * 60
+)
+
+
 # ---------------------------------------------------------
-# PERFORMANCE BY TYPE
+# Excess expenditure
 # ---------------------------------------------------------
 
-print("\n" + "-" * 60)
-print("PERFORMANCE BY ANOMALY TYPE")
-print("-" * 60)
+excess_mask = (
+    df["actual_expenditure"]
+    >
+    df["sanctioned_amount"]
+)
 
-anomaly_types = [
-    "Excess Expenditure",
-    "Large Delay",
-    "Missing UC",
-    "UC Mismatch"
-]
+if excess_mask.sum() > 0:
 
-for anomaly_type in anomaly_types:
+    detected = int(
+        (
+            excess_mask
+            &
+            (df["ensemble_anomaly"] == 1)
+        ).sum()
+    )
 
-    subset = df[
-        df["anomaly_type"] == anomaly_type
-    ]
+    total = int(
+        excess_mask.sum()
+    )
 
-    total = len(subset)
-
-    detected = (
-        subset["ensemble_anomaly"] == 1
-    ).sum()
-
-    missed = total - detected
-
-    detection_rate = (
+    percentage = (
         detected / total
-        if total > 0
-        else 0
+    ) * 100
+
+    print(
+        f"Excess expenditure : "
+        f"{detected}/{total} "
+        f"({percentage:.2f}%)"
+    )
+
+
+# ---------------------------------------------------------
+# Large delay
+# ---------------------------------------------------------
+
+delay_mask = (
+    df["completion_delay_days"]
+    >= 300
+)
+
+if delay_mask.sum() > 0:
+
+    detected = int(
+        (
+            delay_mask
+            &
+            (df["ensemble_anomaly"] == 1)
+        ).sum()
+    )
+
+    total = int(
+        delay_mask.sum()
+    )
+
+    percentage = (
+        detected / total
+    ) * 100
+
+    print(
+        f"Large delay        : "
+        f"{detected}/{total} "
+        f"({percentage:.2f}%)"
+    )
+
+
+# ---------------------------------------------------------
+# Missing UC
+# ---------------------------------------------------------
+
+missing_uc_mask = (
+    (
+        df["uc_available"] == 0
+    )
+    &
+    (
+        df["actual_expenditure"] > 0
+    )
+)
+
+if missing_uc_mask.sum() > 0:
+
+    detected = int(
+        (
+            missing_uc_mask
+            &
+            (df["ensemble_anomaly"] == 1)
+        ).sum()
+    )
+
+    total = int(
+        missing_uc_mask.sum()
+    )
+
+    percentage = (
+        detected / total
+    ) * 100
+
+    print(
+        f"Missing UC         : "
+        f"{detected}/{total} "
+        f"({percentage:.2f}%)"
+    )
+
+
+# ---------------------------------------------------------
+# UC mismatch
+# ---------------------------------------------------------
+
+uc_mismatch_mask = (
+    (
+        df["uc_available"] == 1
+    )
+    &
+    (
+        df["actual_expenditure"] > 0
+    )
+    &
+    (
+        (
+            df["uc_amount"]
+            -
+            df["actual_expenditure"]
+        ).abs()
+        >
+        (
+            0.20
+            *
+            df["actual_expenditure"]
+        )
+    )
+)
+
+if uc_mismatch_mask.sum() > 0:
+
+    detected = int(
+        (
+            uc_mismatch_mask
+            &
+            (df["ensemble_anomaly"] == 1)
+        ).sum()
+    )
+
+    total = int(
+        uc_mismatch_mask.sum()
+    )
+
+    percentage = (
+        detected / total
+    ) * 100
+
+    print(
+        f"UC mismatch       : "
+        f"{detected}/{total} "
+        f"({percentage:.2f}%)"
+    )
+
+
+# =========================================================
+# 10. RISK LEVEL DISTRIBUTION
+# =========================================================
+
+print(
+    "\n" + "-" * 60
+)
+
+print(
+    "ENSEMBLE RISK DISTRIBUTION"
+)
+
+print(
+    "-" * 60
+)
+
+risk_counts = (
+    df["ensemble_risk_level"]
+    .value_counts()
+)
+
+for level in [
+    "CRITICAL",
+    "HIGH",
+    "MEDIUM",
+    "LOW"
+]:
+
+    count = int(
+        risk_counts.get(
+            level,
+            0
+        )
     )
 
     print(
-        f"{anomaly_type:<22}"
-        f" Total: {total:>3}"
-        f"  Detected: {detected:>3}"
-        f"  Missed: {missed:>3}"
-        f"  Detection Rate: {detection_rate:.2%}"
+        f"{level:<10}: {count}"
     )
 
-# ---------------------------------------------------------
-# DETECTION BREAKDOWN
-# ---------------------------------------------------------
 
-true_positives = df[
-    (df["actual_anomaly"] == 1) &
-    (df["ensemble_anomaly"] == 1)
-]
-
-false_positives = df[
-    (df["actual_anomaly"] == 0) &
-    (df["ensemble_anomaly"] == 1)
-]
-
-missed_anomalies = df[
-    (df["actual_anomaly"] == 1) &
-    (df["ensemble_anomaly"] == 0)
-]
-
-print("\n" + "-" * 60)
-print("DETECTION BREAKDOWN")
-print("-" * 60)
-
-print(f"True positives  : {len(true_positives)}")
-print(f"False positives : {len(false_positives)}")
-print(f"Missed anomalies: {len(missed_anomalies)}")
-
-# ---------------------------------------------------------
-# TOP ENSEMBLE ANOMALIES
-# ---------------------------------------------------------
-
-print("\n" + "-" * 60)
-print("TOP 10 ENSEMBLE ANOMALIES")
-print("-" * 60)
-
-columns = [
-    "project_id",
-    "actual_anomaly",
-    "anomaly_type",
-    "iforest_risk",
-    "lof_risk",
-    "ensemble_ml_risk",
-    "ensemble_risk_level"
-]
-
-columns = [
-    col for col in columns
-    if col in df.columns
-]
+# =========================================================
+# 11. TOP HIGH-RISK PROJECTS
+# =========================================================
 
 print(
+    "\n" + "-" * 60
+)
+
+print(
+    "TOP 10 HIGH-RISK PROJECTS"
+)
+
+print(
+    "-" * 60
+)
+
+
+top_projects = (
     df.sort_values(
         "ensemble_ml_risk",
         ascending=False
     )
-    .head(10)[columns]
-    .to_string(index=False)
+    .head(10)
 )
 
-# ---------------------------------------------------------
-# SAVE EVALUATION
-# ---------------------------------------------------------
 
-df["ensemble_prediction_correct"] = (
-    y_true == y_pred
+display_columns = [
+    "project_id",
+    "actual_anomaly",
+    "iforest_risk",
+    "lof_risk",
+    "ensemble_ml_risk",
+    "ensemble_risk_level",
+]
+
+
+print(
+    top_projects[
+        display_columns
+    ].to_string(
+        index=False
+    )
 )
 
-df["ensemble_true_positive"] = (
-    (y_true == 1) &
-    (y_pred == 1)
-).astype(int)
 
-df["ensemble_false_positive"] = (
-    (y_true == 0) &
-    (y_pred == 1)
-).astype(int)
+# =========================================================
+# 12. INTERPRETATION
+# =========================================================
 
-df["ensemble_missed_anomaly"] = (
-    (y_true == 1) &
-    (y_pred == 0)
-).astype(int)
-
-output_path = "data/ensemble_evaluation_results.csv"
-
-df.to_csv(
-    output_path,
-    index=False
+print(
+    "\n" + "=" * 60
 )
 
-print("\n" + "-" * 60)
-print("Evaluation results saved to:")
-print(output_path)
-print("-" * 60)
+print(
+    "EVALUATION INTERPRETATION"
+)
 
-print("\nEnsemble evaluation completed successfully.")
+print(
+    "=" * 60
+)
+
+print(
+    "\nThese metrics are based ONLY on the synthetic"
+    " ground-truth labels."
+)
+
+print(
+    "They must NOT be presented as real-world MPLADS"
+    " fraud-detection accuracy."
+)
+
+print(
+    "\nThe ensemble combines:"
+)
+
+print(
+    "  • Isolation Forest : 40%"
+)
+
+print(
+    "  • LOF              : 60%"
+)
+
+print(
+    "\nHigher ensemble risk means a stronger statistical"
+    " anomaly pattern."
+)
+
+print(
+    "It does NOT prove fraud or misconduct."
+)
+
+print(
+    "=" * 60
+)

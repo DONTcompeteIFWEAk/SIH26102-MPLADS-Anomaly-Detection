@@ -1,33 +1,54 @@
 import pandas as pd
-import numpy as np
+from sklearn.neighbors import LocalOutlierFactor
+from sklearn.preprocessing import StandardScaler
+import joblib
 import os
 
-from sklearn.preprocessing import StandardScaler
-from sklearn.neighbors import LocalOutlierFactor
-import joblib
 
-print("=" * 60)
-print("SIH26102 LOCAL OUTLIER FACTOR MODEL")
-print("=" * 60)
+# =========================================================
+# SIH26102 - LOCAL OUTLIER FACTOR ANOMALY DETECTION
+# Controlled Feature Configuration
+# =========================================================
+
 
 # ---------------------------------------------------------
-# LOAD PROCESSED DATA
+# 1. LOAD PROCESSED DATA
 # ---------------------------------------------------------
 
 input_path = "data/processed_mplads.csv"
+output_path = "data/lof_results.csv"
 
 df = pd.read_csv(input_path)
 
+print("=" * 60)
+print("SIH26102 LOCAL OUTLIER FACTOR")
+print("=" * 60)
+
 print(f"\nProjects loaded: {len(df)}")
 
+
 # ---------------------------------------------------------
-# FEATURE SELECTION
+# 2. SELECT CONTROLLED ML FEATURES
 # ---------------------------------------------------------
-# Do NOT include actual_anomaly.
-# It is our synthetic ground-truth label and must never
-# be given to the ML model.
+#
+# LOF works by comparing a project with its local
+# neighbourhood.
+#
+# Therefore we avoid unnecessary binary/derived signals
+# that can distort neighbourhood distances.
+#
+# These features capture:
+#
+#   Financial behaviour
+#   UC behaviour
+#   Delay behaviour
+#   Spending intensity
+#
+# ---------------------------------------------------------
 
 features = [
+
+    # Financial features
     "sanctioned_amount",
     "actual_expenditure",
     "expenditure_ratio",
@@ -35,22 +56,28 @@ features = [
     "expenditure_deviation_pct",
     "absolute_expenditure_deviation_pct",
 
+    # Delay features
     "completion_delay_days",
     "project_duration_days",
     "delay_to_duration_ratio",
 
+    # UC / utilization features
     "uc_amount",
     "uc_ratio",
     "uc_expenditure_difference",
     "uc_discrepancy_pct",
-
     "missing_uc",
 
+    # Spending intensity
     "expenditure_per_duration_day",
-    "expenditure_per_elapsed_day"
+    "expenditure_per_elapsed_day",
 ]
 
-# Check that all features exist
+
+# ---------------------------------------------------------
+# 3. CHECK FEATURES
+# ---------------------------------------------------------
+
 missing_features = [
     feature
     for feature in features
@@ -58,140 +85,308 @@ missing_features = [
 ]
 
 if missing_features:
-    raise ValueError(
-        f"Missing features: {missing_features}"
-    )
+
+    print("\nERROR: Required ML features are missing:")
+
+    for feature in missing_features:
+        print(f"  - {feature}")
+
+    print("\nRun feature engineering first:")
+    print("python ml/feature_engineering.py")
+
+    raise SystemExit(1)
+
+
+print(f"\nML features selected: {len(features)}")
+
+for feature in features:
+    print(f"  ✓ {feature}")
+
+
+# ---------------------------------------------------------
+# 4. CREATE FEATURE MATRIX
+# ---------------------------------------------------------
 
 X = df[features].copy()
 
+
 # ---------------------------------------------------------
-# CLEAN DATA
+# 5. SAFETY CHECK
 # ---------------------------------------------------------
 
 X = X.replace(
-    [np.inf, -np.inf],
-    np.nan
+    [float("inf"), float("-inf")],
+    0
 )
 
 X = X.fillna(0)
 
+
 # ---------------------------------------------------------
-# STANDARDIZATION
+# 6. SCALE FEATURES
 # ---------------------------------------------------------
+
+print("\nScaling ML features...")
 
 scaler = StandardScaler()
 
 X_scaled = scaler.fit_transform(X)
 
+
 # ---------------------------------------------------------
-# LOCAL OUTLIER FACTOR
+# 7. CREATE LOF MODEL
 # ---------------------------------------------------------
 
-print("\nTraining Local Outlier Factor...")
+print("\nCreating Local Outlier Factor...")
 
-lof = LocalOutlierFactor(
+model = LocalOutlierFactor(
+
     n_neighbors=20,
-    contamination=0.05
+
+    contamination=0.05,
+
+    n_jobs=-1
 )
 
-predictions = lof.fit_predict(X_scaled)
 
 # ---------------------------------------------------------
-# CONVERT PREDICTIONS
+# 8. TRAIN + PREDICT
 # ---------------------------------------------------------
-#
-# LOF:
-#     1  = normal
-#    -1  = anomaly
-#
-# Our format:
-#     0  = normal
-#     1  = anomaly
+
+print("Training LOF model...")
+
+predictions = model.fit_predict(X_scaled)
+
+
+# ---------------------------------------------------------
+# 9. STORE PREDICTIONS
+# ---------------------------------------------------------
 
 df["lof_prediction"] = predictions
+
+
+# LOF:
+#
+# -1 = anomaly
+#  1 = normal
 
 df["lof_anomaly"] = (
     df["lof_prediction"] == -1
 ).astype(int)
 
-# ---------------------------------------------------------
-# ANOMALY SCORE
-# ---------------------------------------------------------
-#
-# negative_outlier_factor_:
-# more negative = more anomalous
-#
-# We retain the original LOF score.
 
-df["lof_anomaly_score"] = (
-    lof.negative_outlier_factor_
+# ---------------------------------------------------------
+# 10. RAW LOF SCORE
+# ---------------------------------------------------------
+#
+# negative_outlier_factor_
+#
+# Values closer to -1:
+#     more normal
+#
+# More negative values:
+#     more anomalous
+#
+# ---------------------------------------------------------
+
+df["lof_score"] = (
+    model.negative_outlier_factor_
 )
 
+
 # ---------------------------------------------------------
-# SAVE RESULTS
+# 11. NORMALIZED LOF RISK SCORE
+# ---------------------------------------------------------
+#
+# Convert LOF score to 0-100.
+#
+# More negative LOF score
+#       ↓
+# Higher anomaly risk
+#
 # ---------------------------------------------------------
 
-os.makedirs("models", exist_ok=True)
+score_min = df["lof_score"].min()
+score_max = df["lof_score"].max()
 
-output_path = "data/lof_results.csv"
+if score_max != score_min:
+
+    df["lof_risk"] = (
+
+        (
+            score_max
+            - df["lof_score"]
+        )
+
+        /
+
+        (
+            score_max
+            - score_min
+        )
+
+    ) * 100
+
+else:
+
+    df["lof_risk"] = 0
+
+
+# ---------------------------------------------------------
+# 12. DISPLAY RESULTS
+# ---------------------------------------------------------
+
+print("\n" + "-" * 60)
+print("MODEL RESULTS")
+print("-" * 60)
+
+print(
+    f"Total projects       : {len(df)}"
+)
+
+print(
+    f"Anomalies detected   : "
+    f"{int(df['lof_anomaly'].sum())}"
+)
+
+print(
+    f"Normal projects      : "
+    f"{int(len(df) - df['lof_anomaly'].sum())}"
+)
+
+
+# ---------------------------------------------------------
+# 13. TOP SUSPICIOUS PROJECTS
+# ---------------------------------------------------------
+
+print("\nTop 10 suspicious projects:")
+
+result = df.sort_values(
+    "lof_risk",
+    ascending=False
+).head(10)
+
+
+display_columns = [
+
+    "project_id",
+
+    "sanctioned_amount",
+
+    "actual_expenditure",
+
+    "expenditure_ratio",
+
+    "completion_delay_days",
+
+    "missing_uc",
+
+    "uc_discrepancy_pct",
+
+    "lof_score",
+
+    "lof_risk",
+
+    "lof_anomaly",
+]
+
+
+print(
+    result[
+        display_columns
+    ].to_string(index=False)
+)
+
+
+# ---------------------------------------------------------
+# 14. SAVE RESULTS
+# ---------------------------------------------------------
+
+os.makedirs(
+    "data",
+    exist_ok=True
+)
 
 df.to_csv(
     output_path,
     index=False
 )
 
+
+# ---------------------------------------------------------
+# 15. SAVE MODEL
+# ---------------------------------------------------------
+
+os.makedirs(
+    "models",
+    exist_ok=True
+)
+
+joblib.dump(
+    model,
+    "models/lof_model.pkl"
+)
+
+
+# ---------------------------------------------------------
+# 16. SAVE SCALER
+# ---------------------------------------------------------
+
 joblib.dump(
     scaler,
     "models/lof_scaler.pkl"
 )
 
+
+# ---------------------------------------------------------
+# 17. SAVE FEATURE LIST
+# ---------------------------------------------------------
+
 joblib.dump(
-    lof,
-    "models/lof_model.pkl"
+    features,
+    "models/lof_features.pkl"
 )
+
 
 # ---------------------------------------------------------
-# SUMMARY
+# 18. FINAL OUTPUT
 # ---------------------------------------------------------
 
-print("\n" + "-" * 60)
-print("LOF RESULTS")
-print("-" * 60)
+print("\n" + "=" * 60)
+print("LOF COMPLETED")
+print("=" * 60)
 
 print(
-    f"Normal projects   : "
-    f"{(df['lof_anomaly'] == 0).sum()}"
+    f"Projects processed : {len(df)}"
 )
 
 print(
-    f"Anomalous projects: "
-    f"{(df['lof_anomaly'] == 1).sum()}"
+    f"ML features        : {len(features)}"
 )
-
-print("\nTop 10 LOF anomalies:")
-
-display_columns = [
-    "project_id",
-    "actual_anomaly",
-    "lof_anomaly_score",
-    "sanctioned_amount",
-    "actual_expenditure",
-    "completion_delay_days",
-    "missing_uc",
-    "uc_ratio"
-]
 
 print(
-    df.sort_values(
-        "lof_anomaly_score",
-        ascending=True
-    )
-    .head(10)[display_columns]
-    .to_string(index=False)
+    f"Anomalies detected : "
+    f"{int(df['lof_anomaly'].sum())}"
 )
 
-print("\n" + "-" * 60)
-print(f"Results saved to: {output_path}")
-print("-" * 60)
+print(
+    f"\nResults saved to:"
+    f"\n{output_path}"
+)
 
-print("\nLOF model completed successfully.")
+print(
+    "\nModel saved to:"
+    "\nmodels/lof_model.pkl"
+)
+
+print(
+    "\nScaler saved to:"
+    "\nmodels/lof_scaler.pkl"
+)
+
+print(
+    "\nFeature list saved to:"
+    "\nmodels/lof_features.pkl"
+)
+
+print("=" * 60)

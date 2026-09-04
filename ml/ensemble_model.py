@@ -1,147 +1,354 @@
 import pandas as pd
-import numpy as np
 import os
-import joblib
 
-print("=" * 60)
-print("SIH26102 ML ENSEMBLE")
-print("=" * 60)
 
-# ---------------------------------------------------------
-# LOAD MODEL RESULTS
-# ---------------------------------------------------------
+# =========================================================
+# SIH26102 - ENSEMBLE ANOMALY DETECTION
+# Isolation Forest + LOF
+# =========================================================
 
-iforest_path = "data/ml_results.csv"
-lof_path = "data/lof_results.csv"
 
-iforest = pd.read_csv(iforest_path)
-lof = pd.read_csv(lof_path)
+IF_PATH = "data/ml_results.csv"
+LOF_PATH = "data/lof_results.csv"
+OUTPUT_PATH = "data/ensemble_results.csv"
 
-print(f"\nIsolation Forest projects: {len(iforest)}")
-print(f"LOF projects             : {len(lof)}")
 
-# ---------------------------------------------------------
-# VERIFY PROJECT ALIGNMENT
-# ---------------------------------------------------------
-
-iforest = iforest.sort_values("project_id").reset_index(drop=True)
-lof = lof.sort_values("project_id").reset_index(drop=True)
-
-if not iforest["project_id"].equals(lof["project_id"]):
-    raise ValueError(
-        "Project IDs do not match between Isolation Forest and LOF results."
-    )
-
-df = iforest.copy()
-
-# ---------------------------------------------------------
-# NORMALIZE ISOLATION FOREST SCORE
-# ---------------------------------------------------------
-#
-# Isolation Forest:
-# lower decision_function = more anomalous
-#
-# Convert to:
-# 0   = least anomalous
-# 100 = most anomalous
-
-iforest_score = df["ml_anomaly_score"]
-
-iforest_min = iforest_score.min()
-iforest_max = iforest_score.max()
-
-if iforest_max == iforest_min:
-    df["iforest_risk"] = 0
-else:
-    df["iforest_risk"] = (
-        (iforest_max - iforest_score)
-        /
-        (iforest_max - iforest_min)
-    ) * 100
-
-# ---------------------------------------------------------
-# NORMALIZE LOF SCORE
-# ---------------------------------------------------------
-#
-# LOF:
-# more negative = more anomalous
-#
-# Convert to:
-# 0   = least anomalous
-# 100 = most anomalous
-
-lof_score = lof["lof_anomaly_score"]
-
-lof_min = lof_score.min()
-lof_max = lof_score.max()
-
-if lof_max == lof_min:
-    df["lof_risk"] = 0
-else:
-    df["lof_risk"] = (
-        (lof_max - lof_score)
-        /
-        (lof_max - lof_min)
-    ) * 100
-
-# ---------------------------------------------------------
-# ADD LOF INFORMATION
-# ---------------------------------------------------------
-
-df["lof_anomaly_score"] = lof["lof_anomaly_score"]
-df["lof_anomaly"] = lof["lof_anomaly"]
-
-# ---------------------------------------------------------
-# ENSEMBLE
-# ---------------------------------------------------------
-#
-# LOF currently performs better on our synthetic dataset,
-# therefore it receives a slightly higher weight.
-#
-# These weights are NOT final production weights.
-
-IFOREST_WEIGHT = 0.40
+IF_WEIGHT = 0.40
 LOF_WEIGHT = 0.60
 
+
+print("=" * 60)
+print("SIH26102 ENSEMBLE ANOMALY DETECTION")
+print("=" * 60)
+
+
+# ---------------------------------------------------------
+# 1. LOAD RESULTS
+# ---------------------------------------------------------
+
+if_df = pd.read_csv(IF_PATH)
+lof_df = pd.read_csv(LOF_PATH)
+
+
+print(
+    f"\nIsolation Forest projects : {len(if_df)}"
+)
+
+print(
+    f"LOF projects              : {len(lof_df)}"
+)
+
+
+# ---------------------------------------------------------
+# 2. CHECK REQUIRED COLUMNS
+# ---------------------------------------------------------
+
+if_columns = [
+    "project_id",
+    "ml_anomaly_score",
+    "iforest_risk",
+]
+
+lof_columns = [
+    "project_id",
+    "lof_score",
+    "lof_risk",
+]
+
+
+for column in if_columns:
+
+    if column not in if_df.columns:
+
+        print(
+            f"\nERROR: Missing Isolation Forest column: {column}"
+        )
+
+        raise SystemExit(1)
+
+
+for column in lof_columns:
+
+    if column not in lof_df.columns:
+
+        print(
+            f"\nERROR: Missing LOF column: {column}"
+        )
+
+        raise SystemExit(1)
+
+
+# ---------------------------------------------------------
+# 3. CHECK PROJECT IDS
+# ---------------------------------------------------------
+
+if_ids = set(
+    if_df["project_id"]
+)
+
+lof_ids = set(
+    lof_df["project_id"]
+)
+
+
+if if_ids != lof_ids:
+
+    print(
+        "\nERROR: Project IDs do not match."
+    )
+
+    raise SystemExit(1)
+
+
+# ---------------------------------------------------------
+# 4. SELECT PROJECT INFORMATION
+# ---------------------------------------------------------
+#
+# Keep the synthetic ground truth and anomaly type.
+#
+# These are ONLY used for evaluation.
+# They are NOT ML input features.
+#
+# ---------------------------------------------------------
+
+metadata_columns = [
+
+    "project_id",
+
+    "actual_anomaly",
+
+    "anomaly_type",
+
+    "state",
+
+    "district",
+
+    "constituency",
+
+    "sanctioned_amount",
+
+    "actual_expenditure",
+
+    "expenditure_ratio",
+
+    "completion_delay_days",
+
+    "uc_available",
+
+    "uc_amount",
+
+    "missing_uc",
+
+    "uc_discrepancy_pct",
+
+]
+
+
+available_metadata = [
+
+    column
+
+    for column in metadata_columns
+
+    if column in if_df.columns
+
+]
+
+
+base_df = if_df[
+    available_metadata
+].copy()
+
+
+# ---------------------------------------------------------
+# 5. ADD ISOLATION FOREST RESULTS
+# ---------------------------------------------------------
+
+if_results = if_df[
+    [
+        "project_id",
+        "ml_anomaly_score",
+        "iforest_risk",
+        "ml_anomaly",
+    ]
+].copy()
+
+
+# ---------------------------------------------------------
+# 6. ADD LOF RESULTS
+# ---------------------------------------------------------
+
+lof_results = lof_df[
+    [
+        "project_id",
+        "lof_score",
+        "lof_risk",
+        "lof_anomaly",
+    ]
+].copy()
+
+
+# ---------------------------------------------------------
+# 7. MERGE
+# ---------------------------------------------------------
+
+df = (
+
+    base_df
+
+    .merge(
+        if_results,
+        on="project_id",
+        how="inner"
+    )
+
+    .merge(
+        lof_results,
+        on="project_id",
+        how="inner"
+    )
+
+)
+
+
+print(
+    f"\nProjects after merge: {len(df)}"
+)
+
+
+# ---------------------------------------------------------
+# 8. VERIFY GROUND TRUTH
+# ---------------------------------------------------------
+
+if "actual_anomaly" not in df.columns:
+
+    print(
+        "\nERROR: actual_anomaly was not preserved."
+    )
+
+    print(
+        "Check data/ml_results.csv."
+    )
+
+    raise SystemExit(1)
+
+
+if "anomaly_type" not in df.columns:
+
+    print(
+        "\nWARNING: anomaly_type is unavailable."
+    )
+
+
+# ---------------------------------------------------------
+# 9. PERCENTILE RISK CALIBRATION
+# ---------------------------------------------------------
+#
+# Both models use different score distributions.
+#
+# Convert their rankings to a common 0-100 scale.
+#
+# Higher = more anomalous.
+#
+# ---------------------------------------------------------
+
+
+def percentile_risk(series):
+
+    return (
+        series
+        .rank(
+            method="average",
+            pct=True
+        )
+        * 100
+    )
+
+
+# Isolation Forest:
+#
+# Lower decision function = more anomalous.
+
+df["iforest_percentile_risk"] = (
+    (-df["ml_anomaly_score"])
+    .rank(
+        method="average",
+        pct=True
+    )
+    * 100
+)
+
+
+# LOF:
+#
+# More negative LOF score = more anomalous.
+
+df["lof_percentile_risk"] = (
+    (-df["lof_score"])
+    .rank(
+        method="average",
+        pct=True
+    )
+    * 100
+)
+
+
+# ---------------------------------------------------------
+# 10. ENSEMBLE RISK
+# ---------------------------------------------------------
+
 df["ensemble_ml_risk"] = (
-    IFOREST_WEIGHT * df["iforest_risk"]
+
+    IF_WEIGHT
+    * df["iforest_percentile_risk"]
+
     +
-    LOF_WEIGHT * df["lof_risk"]
+
+    LOF_WEIGHT
+    * df["lof_percentile_risk"]
+
 )
 
-df["ensemble_ml_risk"] = (
+
+# ---------------------------------------------------------
+# 11. SYNTHETIC BENCHMARK THRESHOLD
+# ---------------------------------------------------------
+#
+# Top 5% is used ONLY because the synthetic dataset contains
+# 5% injected anomalies.
+#
+# Production thresholds must be calibrated using real
+# historical/audit outcomes.
+#
+# ---------------------------------------------------------
+
+ensemble_threshold = (
     df["ensemble_ml_risk"]
-    .clip(0, 100)
+    .quantile(0.95)
 )
 
-# ---------------------------------------------------------
-# ENSEMBLE CLASSIFICATION
-# ---------------------------------------------------------
-#
-# We use the top 5% as anomalies because both individual
-# models were configured with contamination=0.05.
-#
-# This threshold is for synthetic development only.
-
-threshold = df["ensemble_ml_risk"].quantile(0.95)
 
 df["ensemble_anomaly"] = (
-    df["ensemble_ml_risk"] >= threshold
+
+    df["ensemble_ml_risk"]
+    >= ensemble_threshold
+
 ).astype(int)
 
+
 # ---------------------------------------------------------
-# RISK LEVEL
+# 12. RISK LEVEL
 # ---------------------------------------------------------
 
-def get_ml_risk_level(score):
+def get_risk_level(score):
 
-    if score >= 75:
+    if score >= 90:
         return "CRITICAL"
 
-    elif score >= 50:
+    elif score >= 75:
         return "HIGH"
 
-    elif score >= 25:
+    elif score >= 50:
         return "MEDIUM"
 
     else:
@@ -150,90 +357,102 @@ def get_ml_risk_level(score):
 
 df["ensemble_risk_level"] = (
     df["ensemble_ml_risk"]
-    .apply(get_ml_risk_level)
+    .apply(get_risk_level)
 )
 
+
 # ---------------------------------------------------------
-# EXPLANATION
+# 13. EXPLANATION
 # ---------------------------------------------------------
 
 def generate_explanation(row):
 
     reasons = []
 
-    if row["iforest_risk"] >= 75:
+
+    if row["iforest_percentile_risk"] >= 90:
+
         reasons.append(
-            "Isolation Forest detected a strong outlier pattern"
+            "Isolation Forest identified an unusual pattern"
         )
 
-    if row["lof_risk"] >= 75:
+
+    if row["lof_percentile_risk"] >= 90:
+
         reasons.append(
-            "LOF detected a strong local outlier pattern"
+            "LOF identified a strong local outlier pattern"
         )
 
-    if row["actual_expenditure"] > row["sanctioned_amount"]:
-        reasons.append(
-            "Expenditure exceeds sanctioned amount"
-        )
-
-    if row["completion_delay_days"] > 180:
-        reasons.append(
-            "Severe completion delay"
-        )
-
-    if row["missing_uc"] == 1:
-        reasons.append(
-            "Utilization Certificate is missing"
-        )
 
     if (
-        row["uc_available"] == 1
-        and row["actual_expenditure"] > 0
-        and abs(
-            row["uc_amount"] -
-            row["actual_expenditure"]
-        ) > 0.20 * row["actual_expenditure"]
+        "expenditure_ratio" in row.index
+        and row["expenditure_ratio"] > 1
     ):
+
         reasons.append(
-            "UC amount significantly differs from expenditure"
+            "expenditure exceeds sanctioned amount"
         )
 
-    if not reasons:
+
+    if (
+        "completion_delay_days" in row.index
+        and row["completion_delay_days"] > 180
+    ):
+
         reasons.append(
-            "No major anomaly pattern identified"
+            "significant completion delay"
         )
+
+
+    if (
+        "missing_uc" in row.index
+        and row["missing_uc"] == 1
+    ):
+
+        reasons.append(
+            "utilization certificate unavailable"
+        )
+
+
+    if (
+        "uc_discrepancy_pct" in row.index
+        and abs(row["uc_discrepancy_pct"]) > 20
+    ):
+
+        reasons.append(
+            "material UC-expenditure discrepancy"
+        )
+
+
+    if not reasons:
+
+        reasons.append(
+            "statistical anomaly pattern"
+        )
+
 
     return "; ".join(reasons)
 
 
-df["ensemble_explanation"] = df.apply(
-    generate_explanation,
-    axis=1
+df["ensemble_explanation"] = (
+    df.apply(
+        generate_explanation,
+        axis=1
+    )
 )
 
-# ---------------------------------------------------------
-# SAVE
-# ---------------------------------------------------------
-
-os.makedirs("models", exist_ok=True)
-
-output_path = "data/ensemble_results.csv"
-
-df.to_csv(
-    output_path,
-    index=False
-)
 
 # ---------------------------------------------------------
-# SUMMARY
+# 14. DISPLAY RESULTS
 # ---------------------------------------------------------
 
 print("\n" + "-" * 60)
 print("ENSEMBLE RESULTS")
 print("-" * 60)
 
+
 print(
-    f"Isolation Forest weight : {IFOREST_WEIGHT:.0%}"
+    f"Isolation Forest weight : {IF_WEIGHT:.0%}"
 )
 
 print(
@@ -241,37 +460,164 @@ print(
 )
 
 print(
-    f"Ensemble threshold      : {threshold:.4f}"
+    f"ML threshold            : "
+    f"{ensemble_threshold:.2f}"
 )
 
 print(
-    f"Ensemble anomalies      : "
-    f"{df['ensemble_anomaly'].sum()}"
+    f"ML anomalies            : "
+    f"{int(df['ensemble_anomaly'].sum())}"
 )
 
-print("\nTop 10 ensemble anomalies:")
 
-display_columns = [
-    "project_id",
-    "actual_anomaly",
-    "iforest_risk",
-    "lof_risk",
-    "ensemble_ml_risk",
-    "ensemble_risk_level",
-    "ensemble_explanation"
-]
+# ---------------------------------------------------------
+# 15. RISK DISTRIBUTION
+# ---------------------------------------------------------
 
-print(
+print("\nRisk distribution:")
+
+
+distribution = (
+    df["ensemble_risk_level"]
+    .value_counts()
+)
+
+
+for level in [
+
+    "CRITICAL",
+    "HIGH",
+    "MEDIUM",
+    "LOW",
+
+]:
+
+    print(
+
+        f"{level:<10}: "
+        f"{int(distribution.get(level, 0))}"
+
+    )
+
+
+# ---------------------------------------------------------
+# 16. TOP PROJECTS
+# ---------------------------------------------------------
+
+print("\nTop 15 ensemble projects:")
+
+
+top_projects = (
+
     df.sort_values(
         "ensemble_ml_risk",
         ascending=False
     )
-    .head(10)[display_columns]
-    .to_string(index=False)
+
+    .head(15)
+
 )
 
-print("\n" + "-" * 60)
-print(f"Results saved to: {output_path}")
-print("-" * 60)
 
-print("\nML ensemble completed successfully.")
+display_columns = [
+
+    "project_id",
+
+    "actual_anomaly",
+
+    "iforest_percentile_risk",
+
+    "lof_percentile_risk",
+
+    "ensemble_ml_risk",
+
+    "ensemble_risk_level",
+
+    "ensemble_anomaly",
+
+]
+
+
+if "anomaly_type" in df.columns:
+
+    display_columns.insert(
+        2,
+        "anomaly_type"
+    )
+
+
+print(
+
+    top_projects[
+        display_columns
+    ]
+
+    .to_string(
+        index=False
+    )
+
+)
+
+
+# ---------------------------------------------------------
+# 17. SAVE
+# ---------------------------------------------------------
+
+os.makedirs(
+    "data",
+    exist_ok=True
+)
+
+
+df.to_csv(
+    OUTPUT_PATH,
+    index=False
+)
+
+
+# ---------------------------------------------------------
+# 18. FINAL OUTPUT
+# ---------------------------------------------------------
+
+print("\n" + "=" * 60)
+print("ENSEMBLE MODEL COMPLETED")
+print("=" * 60)
+
+
+print(
+    f"Projects processed : {len(df)}"
+)
+
+print(
+    f"IF weight          : {IF_WEIGHT:.0%}"
+)
+
+print(
+    f"LOF weight         : {LOF_WEIGHT:.0%}"
+)
+
+print(
+    f"ML anomalies       : "
+    f"{int(df['ensemble_anomaly'].sum())}"
+)
+
+print(
+    "\nGround truth preserved:"
+)
+
+print(
+    f"actual_anomaly : "
+    f"{'YES' if 'actual_anomaly' in df.columns else 'NO'}"
+)
+
+print(
+    f"anomaly_type   : "
+    f"{'YES' if 'anomaly_type' in df.columns else 'NO'}"
+)
+
+print(
+    "\nResults saved to:"
+    "\ndata/ensemble_results.csv"
+)
+
+print("=" * 60)

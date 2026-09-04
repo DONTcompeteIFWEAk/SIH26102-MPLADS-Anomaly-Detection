@@ -1,0 +1,41 @@
+{
+    "validation_status": "PASS",
+    "total_records": 1000,
+    "total_columns": 14,
+    "required_columns": [
+        "project_id",
+        "state",
+        "district",
+        "constituency",
+        "sanctioned_amount",
+        "actual_expenditure",
+        "completion_delay_days",
+        "uc_available",
+        "uc_amount",
+        "work_status",
+        "sector",
+        "implementing_agency"
+    ],
+    "optional_columns": [
+        "project_duration_days"
+    ],
+    "missing_required_columns": [],
+    "duplicate_project_count": 0,
+    "duplicate_project_ids": [],
+    "missing_values": {},
+    "invalid_numeric_values": {},
+    "negative_values": {},
+    "invalid_boolean_values": {},
+    "warnings": {
+        "expenditure_above_sanctioned": 15,
+        "material_uc_expenditure_mismatch": 129,
+        "delay_over_180_days": 15
+    },
+    "errors": [],
+    "notes": [
+        "Expenditure above sanctioned amount is treated as a warning, not a validation failure.",
+        "Material UC mismatch is treated as a warning, not a validation failure.",
+        "actual_anomaly is not required for production data.",
+        "actual_anomaly is a synthetic ground-truth field used only for prototype evaluation."
+    ]
+}
