@@ -19,6 +19,9 @@ import {
   Search,
   Save,
   ClipboardCheck,
+  Brain,
+  Scale,
+  ShieldCheck,
 } from "lucide-react";
 
 import "./App.css";
@@ -349,6 +352,26 @@ function App() {
     const severeDelay =
       Number(p.completion_delay_days) > 180;
 
+    const ucMismatch =
+      p.uc_available &&
+      Math.abs(
+        Number(p.uc_amount) -
+        Number(p.actual_expenditure)
+      ) >
+      Math.max(
+        Number(p.actual_expenditure) * 0.10,
+        1
+      );
+
+    const mlRisk =
+      Number(p.ml_risk_score || 0);
+
+    const ruleRisk =
+      Number(p.rule_risk_score || 0);
+
+    const hybridRisk =
+      Number(p.risk_score || 0);
+
 
     return (
 
@@ -411,11 +434,17 @@ function App() {
               </h1>
 
               <p className="project-location">
+
                 {p.state}
+
                 {" • "}
+
                 {p.district}
+
                 {" • "}
+
                 {p.constituency}
+
               </p>
 
             </div>
@@ -430,11 +459,11 @@ function App() {
               </span>
 
               <strong>
-                {Number(p.risk_score).toFixed(1)}
+                {hybridRisk.toFixed(1)}
               </strong>
 
               <small>
-                Risk Score
+                Hybrid Risk Score
               </small>
 
             </div>
@@ -614,7 +643,9 @@ function App() {
           </section>
 
 
-          {/* AI RISK ANALYSIS */}
+          {/* =====================================================
+              HYBRID AI RISK ANALYSIS
+              ===================================================== */}
 
           <section className="panel">
 
@@ -627,60 +658,124 @@ function App() {
                 </h2>
 
                 <p>
-                  Hybrid ML + rule-based assessment
+                  Ensemble ML + domain-rule hybrid assessment
                 </p>
 
               </div>
 
+              <div className="hybrid-weight-badge">
+                ML 60% + Rules 40%
+              </div>
+
             </div>
 
+
+            {/* SCORE CARDS */}
 
             <div className="risk-score-grid">
 
 
               <div className="score-card">
 
+                <div className="score-icon">
+
+                  <Brain size={20} />
+
+                </div>
+
                 <span>
                   ML Risk
                 </span>
 
                 <strong>
-                  {Number(
-                    p.ml_risk_score
-                  ).toFixed(1)}
+                  {mlRisk.toFixed(1)}
                 </strong>
+
+                <small>
+                  Isolation Forest + LOF
+                </small>
 
               </div>
 
 
               <div className="score-card">
 
+                <div className="score-icon">
+
+                  <Scale size={20} />
+
+                </div>
+
                 <span>
                   Rule Risk
                 </span>
 
                 <strong>
-                  {Number(
-                    p.rule_risk_score
-                  ).toFixed(1)}
+                  {ruleRisk.toFixed(1)}
                 </strong>
+
+                <small>
+                  Domain & audit rules
+                </small>
 
               </div>
 
 
               <div className="score-card final-score">
 
+                <div className="score-icon">
+
+                  <ShieldCheck size={20} />
+
+                </div>
+
                 <span>
                   Hybrid Risk
                 </span>
 
                 <strong>
-                  {Number(
-                    p.risk_score
-                  ).toFixed(1)}
+                  {hybridRisk.toFixed(1)}
                 </strong>
 
+                <small>
+                  Final prioritization score
+                </small>
+
               </div>
+
+            </div>
+
+
+            {/* HYBRID FORMULA */}
+
+            <div className="hybrid-formula-box">
+
+              <div className="formula-title">
+                How the final score is calculated
+              </div>
+
+              <div className="formula-main">
+
+                Hybrid Risk =
+
+                <span>
+                  (ML Risk × 0.60)
+                </span>
+
+                +
+
+                <span>
+                  (Rule Risk × 0.40)
+                </span>
+
+              </div>
+
+              <p>
+                The system combines statistical anomaly signals
+                from machine learning with explainable domain
+                and audit rules to prioritize projects for
+                human verification.
+              </p>
 
             </div>
 
@@ -690,8 +785,11 @@ function App() {
             <div className="explanation-box">
 
               <h3>
+
                 <AlertTriangle size={19} />
+
                 Why was this project flagged?
+
               </h3>
 
               <p>
@@ -711,6 +809,7 @@ function App() {
 
 
               <div className="signal-list">
+
 
                 {expenditureExcess && (
 
@@ -743,6 +842,22 @@ function App() {
                 )}
 
 
+                {ucMismatch && (
+
+                  <div className="signal-item warning">
+
+                    <FileWarning size={17} />
+
+                    <span>
+                      UC amount differs significantly
+                      from recorded expenditure
+                    </span>
+
+                  </div>
+
+                )}
+
+
                 {severeDelay && (
 
                   <div className="signal-item warning">
@@ -760,6 +875,7 @@ function App() {
 
                 {!expenditureExcess &&
                   !ucMissing &&
+                  !ucMismatch &&
                   !severeDelay && (
 
                   <div className="signal-item">
@@ -815,6 +931,15 @@ function App() {
 
                 )}
 
+                {ucMismatch && (
+
+                  <li>
+                    Review the UC and expenditure records
+                    for reconciliation discrepancies.
+                  </li>
+
+                )}
+
                 {severeDelay && (
 
                   <li>
@@ -836,7 +961,9 @@ function App() {
           </section>
 
 
-          {/* INVESTIGATION WORKFLOW */}
+          {/* =====================================================
+              OFFICER INVESTIGATION
+              ===================================================== */}
 
           <section className="panel investigation-panel">
 
@@ -959,7 +1086,9 @@ function App() {
                       : "save-error"
                   }
                 >
+
                   {saveMessage}
+
                 </span>
 
               )}
@@ -1155,10 +1284,174 @@ function App() {
         </section>
 
 
-        {/* CHART + SUMMARY */}
+        {/* =====================================================
+            HYBRID ENGINE OVERVIEW
+            ===================================================== */}
+
+        <section className="panel hybrid-overview">
+
+          <div className="section-heading">
+
+            <div>
+
+              <h2>
+                Hybrid Risk Engine
+              </h2>
+
+              <p>
+                Combined machine learning and domain-rule
+                anomaly assessment
+              </p>
+
+            </div>
+
+            <div className="hybrid-weight-badge">
+              ML 60% + Rules 40%
+            </div>
+
+          </div>
+
+
+          <div className="hybrid-engine-grid">
+
+
+            {/* ML ENGINE */}
+
+            <div className="engine-card">
+
+              <div className="engine-card-header">
+
+                <Brain size={21} />
+
+                <strong>
+                  ML Anomaly Detection
+                </strong>
+
+              </div>
+
+              <p>
+                An ensemble of Isolation Forest and
+                Local Outlier Factor identifies unusual
+                project patterns.
+              </p>
+
+              <div className="engine-components">
+
+                <span>
+                  Isolation Forest
+                </span>
+
+                <span>
+                  LOF
+                </span>
+
+              </div>
+
+              <div className="engine-weight">
+
+                <strong>
+                  60%
+                </strong>
+
+                <span>
+                  of final risk score
+                </span>
+
+              </div>
+
+            </div>
+
+
+            {/* RULE ENGINE */}
+
+            <div className="engine-card">
+
+              <div className="engine-card-header">
+
+                <Scale size={21} />
+
+                <strong>
+                  Domain Rule Engine
+                </strong>
+
+              </div>
+
+              <p>
+                Explainable rules identify financial,
+                documentation, delay and procedural
+                risk patterns.
+              </p>
+
+              <div className="engine-components">
+
+                <span>
+                  Audit Rules
+                </span>
+
+                <span>
+                  Domain Rules
+                </span>
+
+              </div>
+
+              <div className="engine-weight">
+
+                <strong>
+                  40%
+                </strong>
+
+                <span>
+                  of final risk score
+                </span>
+
+              </div>
+
+            </div>
+
+
+            {/* HYBRID ENGINE */}
+
+            <div className="engine-card final-engine-card">
+
+              <div className="engine-card-header">
+
+                <ShieldCheck size={21} />
+
+                <strong>
+                  Hybrid Risk Score
+                </strong>
+
+              </div>
+
+              <p>
+                ML and rule signals are combined to
+                prioritize projects requiring human
+                verification.
+              </p>
+
+              <div className="formula">
+                Hybrid Risk = (ML × 0.60) + (Rules × 0.40)
+              </div>
+
+              <div className="engine-status">
+                Human verification required
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        {/* =====================================================
+            CHART + SUMMARY
+            ===================================================== */}
 
         <section className="dashboard-grid">
 
+
+          {/* RISK DISTRIBUTION */}
 
           <div className="panel">
 
@@ -1211,6 +1504,8 @@ function App() {
 
           </div>
 
+
+          {/* MONITORING SUMMARY */}
 
           <div className="panel">
 
@@ -1277,7 +1572,9 @@ function App() {
         </section>
 
 
-        {/* INVESTIGATION QUEUE */}
+        {/* =====================================================
+            INVESTIGATION QUEUE
+            ===================================================== */}
 
         <section className="panel">
 
@@ -1334,7 +1631,15 @@ function App() {
                   </th>
 
                   <th>
-                    Score
+                    ML Risk
+                  </th>
+
+                  <th>
+                    Rule Risk
+                  </th>
+
+                  <th>
+                    Hybrid
                   </th>
 
                   <th>
@@ -1391,7 +1696,9 @@ function App() {
                         <span
                           className={`risk-badge-small ${project.risk_level?.toLowerCase()}`}
                         >
+
                           {project.risk_level}
+
                         </span>
 
                       </td>
@@ -1401,7 +1708,7 @@ function App() {
 
                         <strong>
                           {Number(
-                            project.risk_score
+                            project.ml_risk_score || 0
                           ).toFixed(1)}
                         </strong>
 
@@ -1409,7 +1716,31 @@ function App() {
 
 
                       <td>
+
+                        <strong>
+                          {Number(
+                            project.rule_risk_score || 0
+                          ).toFixed(1)}
+                        </strong>
+
+                      </td>
+
+
+                      <td>
+
+                        <strong>
+                          {Number(
+                            project.risk_score || 0
+                          ).toFixed(1)}
+                        </strong>
+
+                      </td>
+
+
+                      <td>
+
                         {project.risk_explanation}
+
                       </td>
 
                     </tr>
@@ -1423,6 +1754,22 @@ function App() {
           </div>
 
         </section>
+
+
+        {/* DISCLAIMER */}
+
+        <div className="dashboard-disclaimer">
+
+          <AlertTriangle size={16} />
+
+          <span>
+            Risk scores indicate potential anomalies or
+            high-risk patterns requiring verification.
+            They do not by themselves establish fraud or
+            wrongdoing.
+          </span>
+
+        </div>
 
       </main>
 

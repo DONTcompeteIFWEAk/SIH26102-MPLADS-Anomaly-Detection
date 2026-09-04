@@ -1,6 +1,6 @@
-/* =========================================================
+/* =====================================================
    GLOBAL
-   ========================================================= */
+   ===================================================== */
 
 * {
   box-sizing: border-box;
@@ -9,171 +9,160 @@
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
-  background: #f4f6f8;
-  color: #17202a;
+  background: #f1f5f9;
+  color: #172b4d;
 }
 
 button,
 input,
-select,
-textarea {
+textarea,
+select {
   font-family: inherit;
 }
 
-
-/* =========================================================
-   APP
-   ========================================================= */
-
-.app {
-  min-height: 100vh;
-  background: #f4f6f8;
+button {
+  cursor: pointer;
 }
 
 
-/* =========================================================
-   HEADER
-   ========================================================= */
+/* =====================================================
+   APP
+   ===================================================== */
+
+.app {
+  min-height: 100vh;
+  background: #f1f5f9;
+}
+
+
+/* =====================================================
+   TOP BAR
+   ===================================================== */
 
 .topbar {
   height: 70px;
-  background: #172b4d;
-  color: white;
-
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-
-  padding: 0 40px;
-
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  padding: 0 32px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-
-  font-size: 21px;
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 18px;
+  color: #172b4d;
 }
 
 .system-title {
-  font-size: 15px;
-  opacity: 0.9;
+  font-size: 14px;
+  color: #64748b;
 }
 
 
-/* =========================================================
-   MAIN
-   ========================================================= */
+/* =====================================================
+   MAIN CONTENT
+   ===================================================== */
 
 .main-content {
-  max-width: 1400px;
+  max-width: 1450px;
   margin: 0 auto;
-  padding: 38px 45px 70px;
+  padding: 35px 32px 60px;
 }
 
 
-/* =========================================================
+/* =====================================================
    PAGE TITLE
-   ========================================================= */
+   ===================================================== */
 
 .page-title {
-  margin-bottom: 30px;
+  margin-bottom: 28px;
 }
 
 .small-label {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.3px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  font-weight: 800;
   color: #64748b;
-  margin-bottom: 7px;
+  margin-bottom: 8px;
 }
 
-.page-title h1 {
+.page-title h1,
+.project-header h1 {
   margin: 0;
   font-size: 32px;
   color: #172b4d;
 }
 
 .page-title p {
+  margin: 10px 0 0;
   color: #64748b;
-  margin-top: 10px;
+  font-size: 15px;
 }
 
 
-/* =========================================================
-   KPI
-   ========================================================= */
+/* =====================================================
+   KPI CARDS
+   ===================================================== */
 
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-bottom: 25px;
+  gap: 18px;
+  margin-bottom: 24px;
 }
 
 .kpi-card {
   background: white;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 23px;
-
+  padding: 22px;
   display: flex;
   align-items: center;
-  gap: 17px;
-
-  border: 1px solid #e2e8f0;
-
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  gap: 15px;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.03);
 }
 
 .kpi-card svg {
-  width: 32px;
-  height: 32px;
-  color: #2563eb;
+  width: 25px;
+  height: 25px;
+}
+
+.kpi-card div {
+  min-width: 0;
 }
 
 .kpi-card span {
   display: block;
+  font-size: 13px;
   color: #64748b;
-  font-size: 14px;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .kpi-card strong {
   display: block;
-  font-size: 24px;
+  font-size: 23px;
   color: #172b4d;
 }
 
 
-/* =========================================================
-   DASHBOARD GRID
-   ========================================================= */
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 25px;
-  margin-bottom: 25px;
-}
-
-
-/* =========================================================
+/* =====================================================
    PANELS
-   ========================================================= */
+   ===================================================== */
 
 .panel {
   background: white;
-  border-radius: 12px;
-  padding: 27px;
-
   border: 1px solid #e2e8f0;
-
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
-
-  margin-bottom: 25px;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.03);
 }
 
 .panel h2 {
@@ -183,88 +172,202 @@ textarea {
 }
 
 .panel-subtitle {
+  margin: 7px 0 0;
   color: #64748b;
-  margin-top: 7px;
-  margin-bottom: 20px;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .section-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-
-  margin-bottom: 22px;
+  gap: 20px;
 }
 
-.section-heading p {
-  margin: 7px 0 0;
+
+/* =====================================================
+   HYBRID ENGINE
+   ===================================================== */
+
+.hybrid-overview {
+  margin-bottom: 24px;
+}
+
+.hybrid-weight-badge {
+  padding: 9px 15px;
+  border-radius: 20px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.hybrid-engine-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.engine-card {
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.engine-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 13px;
+}
+
+.engine-card-header svg {
+  color: #475569;
+}
+
+.engine-card-header strong {
+  font-size: 15px;
+  color: #172b4d;
+}
+
+.engine-card p {
+  margin: 0;
   color: #64748b;
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.engine-components {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.engine-components span {
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: white;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.engine-weight {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.engine-weight strong {
+  font-size: 27px;
+  color: #172b4d;
+}
+
+.engine-weight span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.final-engine-card {
+  background: #f1f5f9;
+}
+
+.formula {
+  margin-top: 17px;
+  padding: 12px;
+  border-radius: 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 12px;
+  font-family: monospace;
+  line-height: 1.5;
+}
+
+.engine-status {
+  margin-top: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
 }
 
 
-/* =========================================================
+/* =====================================================
+   DASHBOARD GRID
+   ===================================================== */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+
+/* =====================================================
    CHART
-   ========================================================= */
+   ===================================================== */
 
 .chart-container {
   width: 100%;
   height: 300px;
+  margin-top: 15px;
 }
 
 
-/* =========================================================
-   MONITORING SUMMARY
-   ========================================================= */
+/* =====================================================
+   SUMMARY
+   ===================================================== */
 
 .summary-list {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-
-  margin-top: 28px;
+  margin-top: 25px;
 }
 
 .summary-list > div {
   display: flex;
   align-items: center;
+  gap: 13px;
+  padding: 17px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
 
-  padding: 16px;
-
-  background: #f8fafc;
-
-  border-radius: 9px;
+.summary-list > div:last-child {
+  border-bottom: none;
 }
 
 .summary-list svg {
-  width: 21px;
-  margin-right: 13px;
-  color: #2563eb;
+  width: 20px;
+  height: 20px;
+  color: #64748b;
 }
 
 .summary-list span {
   flex: 1;
   color: #475569;
+  font-size: 14px;
 }
 
 .summary-list strong {
-  font-size: 21px;
   color: #172b4d;
+  font-size: 18px;
 }
 
 
-/* =========================================================
-   SEARCH
-   ========================================================= */
+/* =====================================================
+   TABLE
+   ===================================================== */
 
 .panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   gap: 20px;
-
   margin-bottom: 22px;
 }
 
@@ -272,40 +375,39 @@ textarea {
   display: flex;
   align-items: center;
   gap: 8px;
-
+  width: 310px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
-
-  padding: 9px 12px;
-
+  padding: 10px 12px;
   background: white;
-
-  width: 300px;
 }
 
 .search-box svg {
   color: #64748b;
+  flex-shrink: 0;
 }
 
 .search-box input {
+  width: 100%;
   border: none;
   outline: none;
-  width: 100%;
-  font-size: 14px;
+  color: #172b4d;
+  font-size: 13px;
 }
 
-
-/* =========================================================
-   TABLE
-   ========================================================= */
+.search-box input::placeholder {
+  color: #94a3b8;
+}
 
 .table-wrapper {
+  width: 100%;
   overflow-x: auto;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 1000px;
 }
 
 thead {
@@ -314,32 +416,33 @@ thead {
 
 th {
   text-align: left;
-  padding: 15px 14px;
-
-  font-size: 13px;
-
-  color: #475569;
-
+  padding: 14px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
   border-bottom: 1px solid #e2e8f0;
 }
 
 td {
-  padding: 17px 14px;
-
-  border-bottom: 1px solid #edf2f7;
-
-  font-size: 14px;
-
+  padding: 16px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #475569;
   vertical-align: top;
 }
 
+td strong {
+  color: #172b4d;
+}
+
 td small {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .clickable-row {
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s ease;
 }
 
 .clickable-row:hover {
@@ -347,194 +450,149 @@ td small {
 }
 
 
-/* =========================================================
+/* =====================================================
    RISK BADGES
-   ========================================================= */
+   ===================================================== */
 
 .risk-badge-small {
   display: inline-block;
-
   padding: 5px 9px;
-
-  border-radius: 6px;
-
-  font-size: 11px;
-
-  font-weight: 700;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .risk-badge-small.critical {
   background: #fee2e2;
-  color: #b91c1c;
+  color: #991b1b;
 }
 
 .risk-badge-small.high {
   background: #ffedd5;
-  color: #c2410c;
+  color: #9a3412;
 }
 
 .risk-badge-small.medium {
   background: #fef3c7;
-  color: #a16207;
+  color: #92400e;
 }
 
 .risk-badge-small.low {
   background: #dcfce7;
-  color: #15803d;
+  color: #166534;
 }
 
 
-/* =========================================================
+/* =====================================================
    PROJECT HEADER
-   ========================================================= */
+   ===================================================== */
 
 .back-button {
   border: none;
-  background: white;
-
-  color: #2563eb;
-
-  padding: 10px 15px;
-
-  border-radius: 8px;
-
-  cursor: pointer;
-
+  background: transparent;
+  color: #475569;
   display: flex;
   align-items: center;
   gap: 7px;
-
-  margin-bottom: 20px;
-
-  font-weight: 600;
+  padding: 0;
+  margin-bottom: 25px;
+  font-size: 13px;
 }
 
 .back-button:hover {
-  background: #eff6ff;
-}
-
-.project-header {
-  background: white;
-
-  border: 1px solid #e2e8f0;
-
-  border-radius: 12px;
-
-  padding: 30px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  margin-bottom: 25px;
-
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
-}
-
-.project-header h1 {
-  margin: 0;
-
-  font-size: 32px;
-
   color: #172b4d;
 }
 
-.project-location {
-  margin: 8px 0 0;
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 25px;
+}
 
+.project-location {
+  margin: 9px 0 0;
   color: #64748b;
+  font-size: 14px;
 }
 
 .risk-header {
-  min-width: 120px;
-
+  min-width: 140px;
+  padding: 16px 20px;
+  border-radius: 12px;
   text-align: center;
-
-  padding: 16px;
-
-  border-radius: 10px;
 }
 
 .risk-header span {
   display: block;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 5px;
 }
 
 .risk-header strong {
   display: block;
   font-size: 30px;
-  margin-top: 4px;
 }
 
 .risk-header small {
-  display: block;
-  color: #64748b;
-  margin-top: 3px;
+  font-size: 10px;
 }
 
 .risk-header.critical {
   background: #fee2e2;
-  color: #b91c1c;
+  color: #991b1b;
 }
 
 .risk-header.high {
   background: #ffedd5;
-  color: #c2410c;
+  color: #9a3412;
 }
 
 .risk-header.medium {
   background: #fef3c7;
-  color: #a16207;
+  color: #92400e;
 }
 
 .risk-header.low {
   background: #dcfce7;
-  color: #15803d;
+  color: #166534;
 }
 
 
-/* =========================================================
-   PROJECT DETAILS
-   ========================================================= */
+/* =====================================================
+   DETAIL CARDS
+   ===================================================== */
 
 .detail-grid {
   display: grid;
-
-  grid-template-columns:
-    repeat(3, 1fr);
-
-  gap: 20px;
-
-  margin-bottom: 25px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 24px;
 }
 
 .detail-card {
   background: white;
-
   border: 1px solid #e2e8f0;
-
   border-radius: 12px;
-
-  padding: 23px;
-
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+  padding: 22px;
 }
 
 .card-title {
   display: flex;
   align-items: center;
   gap: 9px;
-
   margin-bottom: 18px;
 }
 
 .card-title svg {
-  color: #2563eb;
+  color: #64748b;
 }
 
 .card-title h3 {
   margin: 0;
+  font-size: 15px;
   color: #172b4d;
 }
 
@@ -542,9 +600,7 @@ td small {
   display: flex;
   justify-content: space-between;
   gap: 15px;
-
-  padding: 12px 0;
-
+  padding: 11px 0;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -554,228 +610,246 @@ td small {
 
 .detail-row span {
   color: #64748b;
+  font-size: 12px;
 }
 
 .detail-row strong {
-  text-align: right;
   color: #172b4d;
+  font-size: 13px;
+  text-align: right;
 }
 
 
-/* =========================================================
-   RISK SCORES
-   ========================================================= */
+/* =====================================================
+   RISK SCORE CARDS
+   ===================================================== */
 
 .risk-score-grid {
   display: grid;
-
-  grid-template-columns:
-    repeat(3, 1fr);
-
-  gap: 15px;
-
-  margin-bottom: 22px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: 22px;
 }
 
 .score-card {
-  background: #f8fafc;
-
+  position: relative;
+  padding: 22px;
   border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: #f8fafc;
+}
 
-  border-radius: 9px;
+.score-icon {
+  margin-bottom: 12px;
+}
 
-  padding: 20px;
-
-  text-align: center;
+.score-icon svg {
+  color: #475569;
 }
 
 .score-card span {
   display: block;
-
   color: #64748b;
-
-  font-size: 13px;
-
-  margin-bottom: 8px;
+  font-size: 12px;
 }
 
 .score-card strong {
-  font-size: 29px;
-
+  display: block;
+  margin-top: 5px;
+  font-size: 28px;
   color: #172b4d;
 }
 
+.score-card small {
+  display: block;
+  margin-top: 5px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
 .final-score {
-  background: #eff6ff;
-  border-color: #bfdbfe;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 
-/* =========================================================
+/* =====================================================
+   HYBRID FORMULA
+   ===================================================== */
+
+.hybrid-formula-box {
+  margin-top: 22px;
+  padding: 20px;
+  border-radius: 11px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.formula-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+  margin-bottom: 12px;
+}
+
+.formula-main {
+  font-family: monospace;
+  font-size: 15px;
+  color: #172b4d;
+}
+
+.formula-main span {
+  font-weight: 800;
+}
+
+.hybrid-formula-box p {
+  margin: 12px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+
+/* =====================================================
    EXPLANATION
-   ========================================================= */
+   ===================================================== */
 
 .explanation-box {
+  margin-top: 22px;
+  padding: 19px;
   background: #fff7ed;
-
   border: 1px solid #fed7aa;
-
-  border-radius: 9px;
-
-  padding: 20px;
-
-  margin-bottom: 20px;
+  border-radius: 10px;
 }
 
 .explanation-box h3 {
   display: flex;
   align-items: center;
   gap: 8px;
-
   margin: 0 0 10px;
-
   color: #9a3412;
+  font-size: 14px;
 }
 
 .explanation-box p {
   margin: 0;
-
-  line-height: 1.6;
-
-  color: #475569;
+  color: #7c2d12;
+  font-size: 13px;
+  line-height: 1.65;
 }
 
 
-/* =========================================================
-   RISK SIGNALS
-   ========================================================= */
+/* =====================================================
+   SIGNALS
+   ===================================================== */
 
 .signals-box {
-  margin-bottom: 20px;
+  margin-top: 22px;
 }
 
 .signals-box h3 {
-  margin-bottom: 13px;
-
+  margin: 0 0 13px;
+  font-size: 15px;
   color: #172b4d;
 }
 
 .signal-list {
   display: flex;
-
   flex-direction: column;
-
   gap: 9px;
 }
 
 .signal-item {
   display: flex;
-
   align-items: center;
-
   gap: 9px;
-
   padding: 11px 13px;
-
+  border-radius: 8px;
   background: #f8fafc;
-
-  border-radius: 7px;
-
   color: #475569;
-
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .signal-item.danger {
   background: #fef2f2;
-  color: #b91c1c;
+  color: #991b1b;
 }
 
 .signal-item.warning {
   background: #fffbeb;
-  color: #a16207;
+  color: #92400e;
 }
 
 
-/* =========================================================
+/* =====================================================
    VERIFICATION
-   ========================================================= */
+   ===================================================== */
 
 .verification-box {
+  margin-top: 22px;
+  padding: 19px;
+  border-radius: 10px;
   background: #f8fafc;
-
-  border-radius: 9px;
-
-  padding: 20px;
+  border: 1px solid #e2e8f0;
 }
 
 .verification-box h3 {
-  margin-top: 0;
-
+  margin: 0 0 10px;
+  font-size: 14px;
   color: #172b4d;
 }
 
+.verification-box ul {
+  margin: 0;
+  padding-left: 19px;
+}
+
 .verification-box li {
-  margin-bottom: 9px;
-
+  margin: 7px 0;
   color: #475569;
-
+  font-size: 12px;
   line-height: 1.5;
 }
 
 
-/* =========================================================
+/* =====================================================
    INVESTIGATION
-   ========================================================= */
+   ===================================================== */
 
 .investigation-panel {
-  margin-top: 25px;
+  margin-top: 24px;
 }
 
 .saved-indicator {
-  background: #dcfce7;
-
-  color: #15803d;
-
   padding: 7px 11px;
-
-  border-radius: 7px;
-
-  font-size: 12px;
-
-  font-weight: 700;
+  border-radius: 20px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .form-group {
-  margin-bottom: 22px;
+  margin-top: 22px;
 }
 
 .form-group label {
   display: block;
-
   margin-bottom: 8px;
-
-  font-weight: 700;
-
   color: #334155;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .form-group select,
 .form-group textarea {
   width: 100%;
-
   border: 1px solid #cbd5e1;
-
   border-radius: 8px;
-
   padding: 12px;
-
   background: white;
-
   color: #172b4d;
-
   font-size: 14px;
-
   outline: none;
 }
 
@@ -791,180 +865,177 @@ td small {
 
 .form-group textarea {
   color: #172b4d;
+  resize: vertical;
 }
 
 .form-group select:focus,
 .form-group textarea:focus {
-  border-color: #2563eb;
-
-  box-shadow:
-    0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.form-group textarea {
-  resize: vertical;
-
-  line-height: 1.5;
+  border-color: #64748b;
 }
 
 .investigation-actions {
+  margin-top: 20px;
   display: flex;
-
   align-items: center;
-
   gap: 15px;
 }
 
 .save-button {
-  display: flex;
-
-  align-items: center;
-
-  gap: 8px;
-
   border: none;
-
-  background: #2563eb;
-
-  color: white;
-
-  padding: 12px 20px;
-
   border-radius: 8px;
-
-  cursor: pointer;
-
+  padding: 11px 16px;
+  background: #172b4d;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .save-button:hover {
-  background: #1d4ed8;
+  background: #0f1f38;
 }
 
 .save-button:disabled {
   opacity: 0.6;
-
   cursor: not-allowed;
 }
 
 .save-success {
-  color: #15803d;
-
-  font-weight: 600;
-
-  font-size: 14px;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .save-error {
-  color: #b91c1c;
-
-  font-weight: 600;
-
-  font-size: 14px;
+  color: #991b1b;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 
-/* =========================================================
-   LOADING
-   ========================================================= */
+/* =====================================================
+   LOADING / ERROR
+   ===================================================== */
 
 .loading-screen {
   min-height: 100vh;
-
   display: flex;
-
   flex-direction: column;
-
-  align-items: center;
-
   justify-content: center;
-
-  background: #f4f6f8;
-
+  align-items: center;
+  background: #f1f5f9;
   color: #172b4d;
-}
-
-.loading-screen svg {
-  color: #2563eb;
-
-  margin-bottom: 15px;
+  text-align: center;
+  padding: 30px;
 }
 
 .loading-screen h2 {
-  margin-bottom: 5px;
+  margin: 18px 0 7px;
 }
 
 .loading-screen p {
   color: #64748b;
+  margin: 0 0 15px;
 }
 
 .loading-screen code {
-  background: #172b4d;
-
-  color: white;
-
-  padding: 9px 12px;
-
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
   border-radius: 6px;
 }
 
 
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
+/* =====================================================
+   DISCLAIMER
+   ===================================================== */
 
-@media (max-width: 1000px) {
+.dashboard-disclaimer {
+  margin-top: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 13px 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.dashboard-disclaimer svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 1100px) {
 
   .kpi-grid {
-    grid-template-columns:
-      repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .detail-grid {
-    grid-template-columns:
-      1fr;
+    grid-template-columns: 1fr;
+  }
+
+  .hybrid-engine-grid {
+    grid-template-columns: 1fr;
   }
 
 }
 
-@media (max-width: 750px) {
+@media (max-width: 850px) {
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .risk-score-grid {
+    grid-template-columns: 1fr;
+  }
 
   .topbar {
-    padding: 0 20px;
+    padding: 0 18px;
   }
 
   .system-title {
     display: none;
   }
 
-  .main-content {
-    padding: 25px 18px;
-  }
+}
 
-  .dashboard-grid {
-    grid-template-columns:
-      1fr;
+@media (max-width: 600px) {
+
+  .main-content {
+    padding: 25px 16px 45px;
   }
 
   .kpi-grid {
-    grid-template-columns:
-      1fr;
+    grid-template-columns: 1fr;
   }
 
-  .risk-score-grid {
-    grid-template-columns:
-      1fr;
+  .page-title h1,
+  .project-header h1 {
+    font-size: 25px;
   }
 
   .project-header {
-    flex-direction: column;
     align-items: flex-start;
-    gap: 20px;
+    flex-direction: column;
   }
 
-  .panel-header {
-    flex-direction: column;
+  .panel-header,
+  .section-heading {
     align-items: flex-start;
+    flex-direction: column;
   }
 
   .search-box {
