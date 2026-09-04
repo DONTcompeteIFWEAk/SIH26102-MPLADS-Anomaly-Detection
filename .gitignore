@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+.venv/
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+
+# Python generated files
+*.egg-info/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Generated ML files
+data/*.csv
+models/*.pkl
+
+# PostgreSQL / local database files
+*.db
+
+# OS
+.DS_Store
+Thumbs.db
