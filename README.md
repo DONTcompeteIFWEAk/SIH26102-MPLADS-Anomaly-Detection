@@ -1,298 +1,268 @@
-# SIH26102 — AI-Powered MPLADS Anomaly Detection & Risk Monitoring System
+# SIH26102 — AI-Powered MPLADS Anomaly & Risk Detection System
 
-An AI/ML-powered system for detecting potential anomalies, inefficiencies, and high-risk patterns in the implementation of the Members of Parliament Local Area Development Scheme (MPLADS).
+An AI-assisted screening platform for identifying potential anomalies, financial irregularities, documentation gaps, and implementation inefficiencies in MPLADS projects.
 
-The system combines machine learning-based anomaly detection with explainable domain and audit rules to prioritize projects for human verification.
-
----
-
-## 🚀 Project Overview
-
-MPLADS involves a large number of development works distributed across constituencies, sectors, implementing agencies, and districts.
-
-Monitoring such projects manually can make it difficult to identify:
-
-- Unusual expenditure patterns
-- Excess expenditure
-- Significant project delays
-- Missing Utilization Certificates
-- UC and expenditure mismatches
-- Unusual combinations of financial and project attributes
-- Projects requiring detailed audit attention
-
-SIH26102 aims to build an intelligent risk-monitoring system that helps monitoring authorities identify projects that deserve further investigation.
-
-The system does **not** automatically declare a project fraudulent.
-
-Instead, it produces:
-
-> **Potential Anomaly → Risk Score → Explanation → Human Verification**
+> **Important:** The system identifies potential anomaly patterns and high-risk projects for human/audit verification. A high-risk score is NOT proof of fraud.
 
 ---
 
-# 🎯 Objectives
+## Problem Statement
 
-The major objectives of the system are:
+**SIH26102**
 
-1. Detect unusual project patterns using machine learning.
-2. Identify rule-based financial and procedural anomalies.
-3. Combine ML and domain-rule signals into a hybrid risk score.
-4. Provide explainable reasons for every flagged project.
-5. Prioritize projects for officer investigation.
-6. Maintain investigation outcomes and officer notes.
-7. Provide a centralized monitoring dashboard.
-8. Support future integration with actual MPLADS/eSAKSHI data.
+Development of an AI-powered system to detect anomalies, fraud, and inefficiencies in MPLAD Scheme implementation.
+
+The system is designed as a decision-support and audit-screening platform that combines:
+
+- Machine Learning anomaly detection
+- CAG-inspired domain rules
+- Hybrid risk scoring
+- Explainable risk factors
+- Officer investigation workflow
+- PostgreSQL database
+- FastAPI backend
+- React dashboard
 
 ---
 
-# 🧠 System Architecture
+# System Architecture
 
 ```text
-                    MPLADS PROJECT DATA
-                            │
-                            ▼
-                 ┌─────────────────────┐
-                 │ Data Validation &    │
-                 │ Feature Engineering  │
-                 └──────────┬──────────┘
-                            │
-             ┌──────────────┴──────────────┐
-             │                             │
-             ▼                             ▼
-   ┌───────────────────┐        ┌────────────────────┐
-   │ Machine Learning  │        │ Domain Rule Engine  │
-   │ Anomaly Detection │        │                    │
-   └─────────┬─────────┘        └──────────┬─────────┘
-             │                             │
-             ▼                             ▼
-   ┌───────────────────┐        ┌────────────────────┐
-   │ Isolation Forest   │        │ Audit / MPLADS     │
-   │ +                  │        │ Risk Rules         │
-   │ Local Outlier      │        └──────────┬─────────┘
-   │ Factor (LOF)       │                   │
-   └─────────┬─────────┘                   │
-             │                             │
-             ▼                             ▼
-        ┌────────────────────────────────────┐
-        │        HYBRID RISK ENGINE           │
-        │                                    │
-        │ ML Risk × 60% + Rule Risk × 40%    │
-        └────────────────┬───────────────────┘
-                         │
-                         ▼
-               ┌─────────────────────┐
-               │ Explainability      │
-               │ & Risk Signals      │
-               └──────────┬──────────┘
-                          │
-                          ▼
-               ┌─────────────────────┐
-               │ Officer Dashboard   │
-               │ & Investigation     │
-               └──────────┬──────────┘
-                          │
-                          ▼
-                    PostgreSQL
-🤖 Machine Learning Approach
+                    MPLADS DATA
+                         |
+                         v
+                Data Validation
+                         |
+                         v
+                Feature Engineering
+                         |
+              +----------+----------+
+              |                     |
+              v                     v
+       Isolation Forest            LOF
+              |                     |
+              +----------+----------+
+                         |
+                         v
+                    Ensemble ML
+                         |
+                         |
+              +----------+----------+
+              |                     |
+              v                     v
+        ML Risk Score        CAG Rule Engine
+              |                     |
+              +----------+----------+
+                         |
+                         v
+                 Hybrid Risk Score
+                         |
+                         v
+                  Explainability
+                         |
+                         v
+                PostgreSQL Database
+                         |
+                         v
+                    FastAPI
+                         |
+                         v
+                  React Dashboard
+                         |
+                         v
+              Investigation Queue
+Key Features
+1. Data Validation
 
-The system currently uses an ensemble of two unsupervised anomaly detection algorithms.
+The preprocessing pipeline checks:
 
-1. Isolation Forest
+Required columns
+Missing values
+Duplicate project IDs
+Numeric validity
+Negative financial values
+Boolean validity
+Expenditure anomalies
+UC/expenditure discrepancies
+Large completion delays
 
-Isolation Forest identifies observations that are easier to isolate from the rest of the dataset.
+Validation warnings are retained rather than automatically treating every unusual value as fraud.
 
-It is useful for detecting unusual combinations of:
+2. Feature Engineering
 
-Expenditure
-Sanctioned amount
-Project duration
+The system derives financial, documentation, and implementation indicators including:
+
+Expenditure ratio
+Expenditure deviation percentage
+Absolute expenditure deviation
+UC/expenditure difference
+UC ratio
+UC discrepancy percentage
+Missing UC
 Completion delay
-UC values
-Expenditure ratios
+Severe delay
+Extreme delay
+Delay-to-duration ratio
+Expenditure per project-duration day
+Expenditure per elapsed day
+Excess expenditure
+Extreme expenditure
+Missing UC + high expenditure
 
-Model configuration includes:
+These features are used by the anomaly detection models and rule engine.
+
+Machine Learning Layer
+
+The ML layer uses two complementary unsupervised anomaly detection techniques.
+
+Isolation Forest
+
+Isolation Forest identifies observations that are relatively easy to isolate from the rest of the dataset.
+
+Configuration:
 
 n_estimators = 200
 contamination = 0.05
 random_state = 42
-2. Local Outlier Factor (LOF)
+Local Outlier Factor
 
-Local Outlier Factor identifies observations that have substantially different local density compared with neighboring observations.
+LOF identifies observations that have substantially different local density compared with their neighboring observations.
 
-It helps identify projects that may look unusual relative to projects with similar characteristics.
-
-Current configuration:
+Configuration:
 
 n_neighbors = 20
 contamination = 0.05
-🔀 ML Ensemble
+Ensemble ML
 
-Isolation Forest and LOF are combined to produce an ensemble ML risk score.
+Isolation Forest and LOF are combined to reduce dependence on a single anomaly detector.
 
 Current weighting:
 
-Isolation Forest + LOF
-        ↓
-   Ensemble ML Risk
+Isolation Forest : 40%
+LOF              : 60%
 
-The ensemble helps reduce dependence on a single anomaly detection algorithm.
+The model outputs are percentile-calibrated to produce a normalized ML risk score from approximately 0–100.
 
-📊 Hybrid Risk Engine
+CAG-Inspired Rule Engine
 
-The final system combines machine-learning signals with explainable domain rules.
+The rule engine provides domain-aware screening signals inspired by historical audit irregularity patterns.
 
-Hybrid Risk Score
+Current rules include:
 
-= (ML Risk × 0.60)
-+ (Rule Risk × 0.40)
+Rule	Description
+Excess expenditure	Actual expenditure exceeds sanctioned amount
+Extreme expenditure	Expenditure exceeds sanction by more than 25%
+Missing UC	Utilization Certificate unavailable
+UC mismatch	UC amount materially differs from expenditure
+Significant delay	Completion delay exceeds 180 days
+Severe delay	Completion delay exceeds one year
+Not started	Project work has not started
 
-Therefore:
+The rule engine is intended to complement ML rather than replace it.
 
-60% → Machine Learning
-40% → Domain / Audit Rules
+Hybrid Risk Engine
 
-This approach combines:
+The final risk score combines ML and rule-based evidence.
 
-Statistical anomaly detection
-Local anomaly detection
-Domain knowledge
-Audit-oriented rules
-Explainability
-⚠️ Risk Classification
+Hybrid Risk Score =
+    60% × Ensemble ML Risk
+  + 40% × Rule Risk
 
-Projects are classified using the hybrid risk score:
+Risk levels:
 
-Score	Classification
-75–100	CRITICAL
-50–74.99	HIGH
-25–49.99	MEDIUM
-0–24.99	LOW
+75–100  → CRITICAL
+50–74   → HIGH
+25–49   → MEDIUM
+0–24    → LOW
 
-These classifications are intended for prioritization and verification.
+The system also generates human-readable explanations for the risk factors contributing to a project's score.
 
-They are not proof of fraud or wrongdoing.
+Synthetic Benchmark
 
-🔎 Risk Signals
+The current development dataset contains:
 
-The current prototype considers signals including:
+Projects                 : 1,000
+Synthetic anomalies      : 50
+Anomaly proportion       : 5%
 
-Financial
-Actual expenditure exceeding sanctioned amount
-Substantially high expenditure
-Extreme expenditure deviation
-Expenditure/UC mismatch
-Documentation
-Missing Utilization Certificate
-UC amount inconsistent with expenditure
-Project Execution
-Significant completion delay
-Severe delay
-Extreme delay
-Projects with unusual duration/expenditure relationships
-📚 Domain & Audit Rules
+The benchmark contains injected synthetic anomaly patterns such as:
 
-The rule engine is based on MPLADS-related procedural and audit-risk patterns.
+Excess expenditure
+Large completion delays
+Missing utilization certificates
+UC/expenditure mismatches
 
-The current rule library includes checks corresponding to patterns such as:
+Using the current controlled synthetic dataset, the final hybrid screening configuration produced:
 
-Delayed recommendation
-Execution without MP recommendation
-Sanction above MP-indicated amount
-Inadmissible works
-Excess funding to societies/trusts
-Missing feasibility/estimate
-Implementing-agency selection anomalies
-Non-commencement
-Delayed completion
-Long incomplete works
-Doubtful vouchers
-Assets not in use
-Asset misuse
-Financial reporting mismatches
-UC/accounts/MPR mismatches
-Missing Utilization Certificates
-Fund diversion
-Excess advances
-Unspent balances not refunded
-Missing public disclosure
-SC/ST allocation shortfalls
+Precision : 0.80
+Recall    : 0.80
+F1 Score  : 0.80
 
-These rules are intended to convert known audit-risk patterns into machine-checkable signals.
+True Positives  : 40
+False Positives : 10
+False Negatives : 10
+True Negatives  : 940
 
-🧪 Current Dataset
+This corresponds to approximately 98% overall accuracy on the synthetic benchmark.
 
-The current development version uses synthetic MPLADS-like project data for model development and evaluation.
+Important Benchmark Limitation
 
-The dataset contains:
+These metrics are based only on synthetic ground-truth labels.
 
-1,000 projects
+They must NOT be interpreted as real-world MPLADS fraud-detection accuracy.
 
-with features such as:
+The synthetic dataset is used to validate the technical pipeline during development. Real deployment requires validated MPLADS records and appropriate audit-confirmed outcomes.
 
-Project ID
-State
-District
-Constituency
-Sanctioned amount
-Actual expenditure
-Project duration
-Completion delay
-UC availability
-UC amount
-Work status
-Sector
-Implementing agency
+Risk Interpretation
 
-Synthetic anomalies were injected to evaluate the anomaly detection pipeline.
+The system does not make a legal or audit finding.
 
-Important
+Instead, it produces signals such as:
 
-The synthetic geographic fields and project records are not real MPLADS records.
+Potential Anomaly
+High-Risk Pattern
+Audit Attention Required
+Requires Verification
 
-They should not be interpreted as actual government findings.
+For example:
 
-The actual_anomaly field is synthetic ground truth created only for development/evaluation.
+CRITICAL
 
-📈 Synthetic Benchmark Results
+ML Risk:       97.96
+Rule Risk:     45.00
+Hybrid Risk:   76.78
 
-The current synthetic benchmark produced the following results for the ML ensemble:
+Reasons:
+- Expenditure exceeds sanction
+- Expenditure >25% above sanction
+- Missing utilization certificate
 
-Precision : 0.82
-Recall    : 0.82
-F1 Score  : 0.82
+Action:
+Requires human/audit verification
+Human-in-the-Loop Workflow
+Project Data
+     |
+     v
+Automated Screening
+     |
+     v
+Risk Score + Explanation
+     |
+     v
+Officer Review
+     |
+     +-------> Valid Project
+     |
+     +-------> Requires Verification
+     |
+     +-------> Investigation
+     |
+     v
+Audit / Administrative Action
 
-These results are based on the synthetic dataset and must not be interpreted as real-world MPLADS model performance.
+The final decision remains with authorized officers and auditors.
 
-Real-world performance will need to be evaluated after integrating actual MPLADS/eSAKSHI data and obtaining verified investigation/audit outcomes.
-
-🗄️ Database
-
-The system uses PostgreSQL.
-
-Main project information is stored in the projects table.
-
-Investigation information is stored in the investigations table.
-
-The database stores:
-
-Project
-Project ID
-Location
-Financial information
-Project status
-UC information
-ML risk score
-Rule risk score
-Hybrid risk score
-Risk level
-Risk explanation
-Investigation
-Project ID
-Investigation status
-Officer notes
-Created timestamp
-Updated timestamp
-🔌 Backend
+Backend
 
 The backend is implemented using:
 
@@ -300,31 +270,48 @@ Python
 FastAPI
 SQLAlchemy
 PostgreSQL
-
-Main API endpoints include:
-
+API Endpoints
 GET  /
 GET  /projects
 GET  /projects/{project_id}
+
 GET  /anomalies
 GET  /critical
+
 GET  /statistics
 GET  /states
 GET  /states/{state_name}
 GET  /constituencies/{constituency}
 
-POST /investigations/{project_id}
+POST /investigations
 GET  /investigations/{project_id}
 PUT  /investigations/{project_id}
+Database
 
-FastAPI provides the interface between the React frontend and PostgreSQL database.
+PostgreSQL stores:
 
-💻 Frontend
+Project information
+Financial indicators
+ML risk score
+Rule risk score
+Hybrid risk score
+Risk level
+Risk explanation
+Investigation records
+Officer notes
+Investigation status
 
-The dashboard is built using:
+Current development database:
+
+Database : sih26102
+Projects : 1000
+Frontend
+
+The frontend is implemented using:
 
 React
 Vite
+JavaScript
 Axios
 Recharts
 Lucide React
@@ -332,151 +319,102 @@ CSS
 
 The dashboard provides:
 
-Monitoring Dashboard
-Total projects
-Total expenditure
-High-risk projects
-Critical projects
+Overall project statistics
 Risk distribution
-Monitoring summary
-Investigation queue
-Project Investigation
-Project information
-Financial details
-Project status
-Implementation information
-ML risk
-Rule risk
-Hybrid risk
-Risk explanation
-Detected risk signals
-Recommended verification actions
-Officer Investigation
-
-Officers can record:
-
-NEW
-UNDER REVIEW
-VERIFIED
-FALSE POSITIVE
-ESCALATED
-CLOSED
-
-along with investigation notes.
-
-Investigation records are persisted in PostgreSQL.
-
-📁 Project Structure
+Hybrid risk engine overview
+High-risk project queue
+Project-level risk analysis
+ML vs rule risk
+Explainable risk factors
+Investigation workflow
+Project Structure
 SIH26102/
 │
 ├── data/
-│   └── synthetic_mplads.csv
+│   ├── synthetic_mplads.csv
+│   ├── validated_mplads.csv
+│   ├── processed_mplads.csv
+│   ├── ml_results.csv
+│   ├── lof_results.csv
+│   ├── ensemble_results.csv
+│   ├── rule_results.csv
+│   ├── hybrid_risk_results.csv
+│   └── hybrid_evaluation_results.csv
 │
 ├── ml/
-│   ├── __init__.py
 │   ├── generate_data.py
+│   ├── data_validation.py
 │   ├── feature_engineering.py
 │   ├── anomaly_model.py
 │   ├── lof_model.py
 │   ├── ensemble_model.py
 │   ├── rules.py
-│   ├── risk_scoring.py
 │   ├── hybrid_risk_scoring.py
 │   ├── evaluate_model.py
 │   ├── evaluate_lof.py
-│   ├── evaluate_ensemble.py
-│   ├── init_database.py
-│   └── load_database.py
+│   └── evaluate_hybrid.py
 │
 ├── models/
 │   ├── isolation_forest.pkl
 │   ├── scaler.pkl
 │   ├── lof_model.pkl
-│   └── lof_scaler.pkl
+│   ├── lof_scaler.pkl
+│   └── ...
 │
 ├── frontend/
-│   ├── src/
-│   │   ├── App.jsx
-│   │   ├── App.css
-│   │   └── ...
-│   ├── package.json
-│   └── vite.config.js
+│   └── src/
+│       ├── App.jsx
+│       └── App.css
 │
 ├── database.py
 ├── db_models.py
 ├── main.py
 ├── requirements.txt
 └── README.md
-⚙️ Local Setup
-1. Clone the repository
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-cd SIH26102
-2. Create Python virtual environment
-python -m venv venv
+Running the Project
+1. Activate virtual environment
 
-Activate it on Windows:
+Windows PowerShell:
 
-venv\Scripts\activate
-3. Install Python dependencies
+.\venv\Scripts\Activate.ps1
+2. Install dependencies
 pip install -r requirements.txt
-🧪 Generate Synthetic Data
-
-Run:
-
+3. Generate development dataset
 python ml/generate_data.py
-
-This generates:
-
-data/synthetic_mplads.csv
-🔧 Feature Engineering
-
-Run:
-
+4. Validate data
+python ml/data_validation.py
+5. Feature engineering
 python ml/feature_engineering.py
-
-This generates:
-
-data/processed_mplads.csv
-🤖 Run Machine Learning Models
-Isolation Forest
+6. Run Isolation Forest
 python ml/anomaly_model.py
-LOF
+7. Run LOF
 python ml/lof_model.py
-ML Ensemble
+8. Run ensemble
 python ml/ensemble_model.py
-📋 Run Rule Engine
+9. Run CAG-inspired rules
 python ml/rules.py
-🔀 Run Hybrid Risk Engine
-
-After the ML ensemble and rule engine have completed:
-
+10. Generate hybrid risk
 python ml/hybrid_risk_scoring.py
-
-This generates:
-
-data/hybrid_risk_results.csv
-🗃️ PostgreSQL Setup
+11. Evaluate
+python ml/evaluate_hybrid.py
+Database Setup
 
 Create a PostgreSQL database named:
 
 sih26102
 
-Update the database connection in:
+Configure the connection string in:
 
 database.py
 
-Example:
-
-DATABASE_URL = "postgresql://postgres:YOUR_PASSWORD@localhost:5432/sih26102"
-
-Create the tables:
+Initialize tables:
 
 python ml/init_database.py
 
-Load the hybrid results:
+Load the latest hybrid results:
 
 python ml/load_database.py
-🚀 Start FastAPI
+Start Backend
 
 From the project root:
 
@@ -485,193 +423,134 @@ uvicorn main:app --reload
 Backend:
 
 http://127.0.0.1:8000
+Start Frontend
 
-Swagger API documentation:
-
-http://127.0.0.1:8000/docs
-🌐 Start React Frontend
-
-Open another terminal:
+Open a second terminal:
 
 cd frontend
-
-Install dependencies:
-
 npm install
-
-Start Vite:
-
 npm run dev
 
 Frontend:
 
 http://localhost:5173
-🔄 Complete Development Pipeline
-generate_data.py
-       ↓
-synthetic_mplads.csv
-       ↓
-feature_engineering.py
-       ↓
-processed_mplads.csv
-       ↓
- ┌───────────────┐
- │               │
- ▼               ▼
-Isolation       LOF
-Forest
- │               │
- └───────┬───────┘
-         ↓
-ensemble_model.py
-         ↓
-ensemble_results.csv
-         +
-rules.py
-         ↓
-rule_results.csv
-         ↓
-hybrid_risk_scoring.py
-         ↓
-hybrid_risk_results.csv
-         ↓
-load_database.py
-         ↓
-PostgreSQL
-         ↓
-FastAPI
-         ↓
-React Dashboard
-         ↓
-Officer Investigation
-🛡️ Human-in-the-Loop Design
+Technology Stack
+Layer	Technology
+Frontend	React + Vite
+Styling	CSS
+Visualization	Recharts
+Icons	Lucide React
+Backend	FastAPI
+ORM	SQLAlchemy
+Database	PostgreSQL
+ML	scikit-learn
+Data Processing	Pandas + NumPy
+Models	Isolation Forest + LOF
+Domain Intelligence	CAG-inspired Rules
+Development	VS Code
+Version Control	Git + GitHub
+Data Strategy
 
-The system follows a human-in-the-loop approach.
+The prototype is designed to support multiple sources of evidence.
 
-The AI system:
+Potential production data sources include:
 
-Detects
-   ↓
-Scores
-   ↓
-Explains
-   ↓
-Prioritizes
-
-The authorized officer:
-
-Reviews
-   ↓
-Verifies documents
-   ↓
-Investigates
-   ↓
-Records outcome
-
-This prevents an anomaly score from being treated as an automatic determination of fraud.
-
-🔮 Future Scope
-
-The current prototype can be extended with:
-
-Real MPLADS Data
-
-Integrate actual:
-
-MPLADS public dashboard data
+Official MPLADS datasets
 eSAKSHI data where accessible
-Historical MPLADS datasets
-District-level records
-Publicly available audit information
-Advanced Anomaly Detection
+MPLADS public dashboard information
+Project expenditure information
+Utilization Certificate records
+Project completion information
+Uploaded project documentation
+Audit observations
 
-Potential future models:
+Historical CAG observations can be used to inform domain rules and validation logic.
 
-Autoencoders
-One-Class SVM
-DBSCAN
+They should not be treated as conventional machine-learning labels unless appropriately structured and validated.
+
+Production Data Considerations
+
+The current development benchmark uses synthetic data.
+
+A production implementation should address:
+
+Official data access
+Data-sharing permissions
+Historical vs current system differences
+eSAKSHI integration
+Document availability
+OCR for scanned records
+Missing records
+Data quality inconsistencies
+Audit-confirmed labels
+Model drift
+Threshold calibration
+State/district/agency-specific baselines
+Security and access control
+Limitations
+The current dataset is synthetic.
+Synthetic anomaly labels do not represent confirmed fraud.
+Model performance has not been validated against real audit-confirmed MPLADS outcomes.
+Historical CAG observations are used as domain knowledge rather than direct ML labels.
+Missing data can increase uncertainty.
+Risk thresholds require calibration on real operational data.
+High-risk projects require human verification.
+The current prototype does not independently establish legal or financial misconduct.
+Future Scope
+Data Integration
+Integrate official MPLADS/eSAKSHI datasets
+Automated ingestion pipelines
+Historical project tracking
+Advanced ML
+Autoencoder-based anomaly detection
+Graph-based relationship analysis
 Temporal anomaly detection
-Graph-based anomaly detection
+District/state-specific baselines
+Model ensemble optimization
 Document Intelligence
-
-Add OCR/document processing for:
-
-Utilization Certificates
-Bills
-Sanction documents
-Completion certificates
-Work photographs
-Supporting records
+OCR
+UC extraction
+Sanction-order extraction
+Estimate/BOQ comparison
+Document consistency checking
 Explainable AI
+SHAP-based explanations
+Feature contribution visualization
+Evidence-linked explanations
+Investigation Workflow
+Officer assignment
+Investigation status tracking
+Evidence attachments
+Audit notes
+Resolution history
+Escalation workflow
+Security
+Authentication
+Role-based access control
+Audit logging
+Encryption
+Secure deployment
+Responsible AI Position
 
-Future versions can use:
+This platform is designed as an audit-screening and decision-support system.
 
-SHAP
-Feature contribution analysis
-Local explanations
-Rule + ML evidence visualization
-Geospatial Analysis
+It should:
 
-Integrate GIS data to detect:
+prioritize projects for review,
+surface unusual patterns,
+explain why a project was flagged,
+support evidence-based investigation.
 
-Geographic clustering
-Repeated implementing agencies
-Project concentration
-Constituency-level patterns
-Production Deployment
+It should not:
 
-Future deployment can include:
-
-React
-   ↓
-Cloud API
-   ↓
-FastAPI
-   ↓
-Managed PostgreSQL
-⚠️ Current Limitations
-The current development dataset is synthetic.
-Synthetic anomaly labels are not official fraud labels.
-ML benchmark results do not represent real-world accuracy.
-Real MPLADS data may have missing or inconsistent fields.
-Historical MPLADS data availability differs across reporting periods.
-Anomaly detection identifies unusual patterns, not confirmed fraud.
-Final decisions require human verification and supporting evidence.
-Model thresholds will need recalibration using real operational data.
-📌 Important Disclaimer
-
-This project is a prototype developed for Smart India Hackathon problem statement SIH26102.
-
-Risk scores and anomaly flags are intended to assist monitoring and audit prioritization.
-
-A high-risk score does not establish fraud, corruption, or wrongdoing.
-
-Every flagged project should undergo appropriate human review and verification using official records and supporting documentation.
-
-🏆 Smart India Hackathon
+automatically accuse an individual or organization,
+declare fraud solely from an ML score,
+replace authorized officers or auditors,
+treat synthetic benchmark performance as real-world accuracy.
+Smart India Hackathon
 
 Problem Statement: SIH26102
 
-Theme: AI-powered anomaly, fraud and inefficiency detection in MPLADS implementation.
+Theme: AI-powered anomaly, fraud-risk, and inefficiency detection in MPLADS implementation.
 
-The project focuses on combining:
-
-Artificial Intelligence
-+
-Machine Learning
-+
-Domain Knowledge
-+
-Audit Rules
-+
-Explainable Risk Scoring
-+
-Human-in-the-Loop Investigation
-
-to build an intelligent monitoring system for public-development projects.
-
-👥 Team
-
-Smart India Hackathon 2026
-
-Team: SIH26102
+The prototype demonstrates a complete technical pipeline from data validation and anomaly detection to hybrid risk scoring, database storage, API delivery, and an officer-facing dashboard.

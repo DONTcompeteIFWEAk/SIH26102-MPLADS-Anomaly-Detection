@@ -1,559 +1,301 @@
 import pandas as pd
-import os
+import numpy as np
 
 
-# =========================================================
-# SIH26102 - HYBRID RISK SCORING ENGINE
-# ML Ensemble + CAG Rule Engine
-# =========================================================
+ML_FILE = "data/ensemble_results.csv"
+RULE_FILE = "data/rule_results.csv"
+OUTPUT_FILE = "data/hybrid_risk_results.csv"
 
 
-ML_PATH = "data/ensemble_results.csv"
-RULE_PATH = "data/rule_results.csv"
-OUTPUT_PATH = "data/hybrid_risk_results.csv"
-
+# ---------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------
 
 ML_WEIGHT = 0.60
 RULE_WEIGHT = 0.40
 
 
-print("=" * 60)
-print("SIH26102 HYBRID RISK ENGINE")
-print("=" * 60)
-
-
 # ---------------------------------------------------------
-# 1. LOAD ML RESULTS
+# Rule weights
 # ---------------------------------------------------------
 
-if not os.path.exists(ML_PATH):
-
-    print(f"\nERROR: {ML_PATH} not found.")
-
-    print("\nRun:")
-    print("python ml/ensemble_model.py")
-
-    raise SystemExit(1)
-
-
-ml_df = pd.read_csv(
-    ML_PATH
-)
-
-
-# ---------------------------------------------------------
-# 2. LOAD RULE RESULTS
-# ---------------------------------------------------------
-
-if not os.path.exists(RULE_PATH):
-
-    print(f"\nERROR: {RULE_PATH} not found.")
-
-    print("\nRun:")
-    print("python ml/rules.py")
-
-    raise SystemExit(1)
-
-
-rule_df = pd.read_csv(
-    RULE_PATH
-)
-
-
-print(
-    f"\nML projects    : {len(ml_df)}"
-)
-
-print(
-    f"Rule projects  : {len(rule_df)}"
-)
-
-
-# ---------------------------------------------------------
-# 3. CHECK PROJECT IDS
-# ---------------------------------------------------------
-
-ml_ids = set(
-    ml_df["project_id"]
-)
-
-rule_ids = set(
-    rule_df["project_id"]
-)
-
-
-if ml_ids != rule_ids:
-
-    print(
-        "\nERROR: Project IDs do not match."
-    )
-
-    print(
-        "Missing in rules:",
-        list(ml_ids - rule_ids)[:10]
-    )
-
-    print(
-        "Missing in ML:",
-        list(rule_ids - ml_ids)[:10]
-    )
-
-    raise SystemExit(1)
-
-
-# ---------------------------------------------------------
-# 4. MERGE RESULTS
-# ---------------------------------------------------------
-
-df = ml_df.merge(
-    rule_df,
-    on="project_id",
-    how="inner",
-    suffixes=("_ml", "_rule")
-)
-
-
-print(
-    f"\nProjects after merge: {len(df)}"
-)
-
-
-# ---------------------------------------------------------
-# 5. VALIDATE ML RISK COLUMN
-# ---------------------------------------------------------
-
-if "ensemble_ml_risk" not in df.columns:
-
-    print(
-        "\nERROR: ensemble_ml_risk not found."
-    )
-
-    print(
-        "Run:"
-    )
-
-    print(
-        "python ml/ensemble_model.py"
-    )
-
-    raise SystemExit(1)
-
-
-# ---------------------------------------------------------
-# 6. CALCULATE RULE RISK
-# ---------------------------------------------------------
-#
-# Rule risk is based on the number and severity of
-# detected domain/audit signals.
-#
-# Current rule signals:
-#
-#   Excess expenditure
-#   Extreme expenditure
-#   Missing UC
-#   Delay
-#   Severe delay
-#   Not started
-#
-# Each rule contributes a defined amount.
-#
-# The score is capped at 100.
-#
-# ---------------------------------------------------------
-
-
-rule_weights = {
-
+RULE_WEIGHTS = {
     "rule_excess_expenditure": 15,
-
     "rule_extreme_expenditure": 20,
-
     "rule_missing_uc": 10,
-
     "rule_uc_mismatch": 15,
-
     "rule_delay": 10,
-
     "rule_severe_delay": 15,
-
     "rule_not_started": 10,
 }
 
 
-df["rule_risk_score"] = 0.0
-
-
-for column, weight in rule_weights.items():
-
-    if column in df.columns:
-
-        df["rule_risk_score"] += (
-            df[column].astype(int)
-            * weight
-        )
-
-
-# Cap rule risk at 100.
-
-df["rule_risk_score"] = (
-    df["rule_risk_score"]
-    .clip(0, 100)
-)
-
-
 # ---------------------------------------------------------
-# 7. HYBRID RISK SCORE
-# ---------------------------------------------------------
-#
-# Final score:
-#
-#     60% ML
-#     40% Rules
-#
-# ---------------------------------------------------------
-
-df["hybrid_risk_score"] = (
-
-    ML_WEIGHT
-    * df["ensemble_ml_risk"]
-
-    +
-
-    RULE_WEIGHT
-    * df["rule_risk_score"]
-
-)
-
-
-# ---------------------------------------------------------
-# 8. RISK LEVEL
+# Risk level
 # ---------------------------------------------------------
 
 def get_risk_level(score):
-
     if score >= 75:
-
         return "CRITICAL"
-
     elif score >= 50:
-
         return "HIGH"
-
     elif score >= 25:
-
         return "MEDIUM"
-
     else:
-
         return "LOW"
 
 
-df["hybrid_risk_level"] = (
-    df["hybrid_risk_score"]
-    .apply(get_risk_level)
-)
+# ---------------------------------------------------------
+# Rule risk score
+# ---------------------------------------------------------
+
+def calculate_rule_score(row):
+
+    score = 0
+
+    for rule, weight in RULE_WEIGHTS.items():
+        if rule in row.index:
+            score += int(row[rule]) * weight
+
+    return min(score, 100)
 
 
 # ---------------------------------------------------------
-# 9. HYBRID EXPLANATION
+# Main
 # ---------------------------------------------------------
 
-def generate_explanation(row):
+def main():
 
-    reasons = []
+    print("=" * 60)
+    print("SIH26102 HYBRID RISK SCORING")
+    print("=" * 60)
 
+    print("\nLoading ML results...")
+    ml = pd.read_csv(ML_FILE)
 
-    # -------------------------------
-    # ML signals
-    # -------------------------------
+    print(f"ML projects: {len(ml)}")
 
-    if row["ensemble_ml_risk"] >= 90:
+    print("\nLoading CAG rule results...")
+    rules = pd.read_csv(RULE_FILE)
 
-        reasons.append(
-            "Strong statistical anomaly pattern detected by ML"
-        )
+    print(f"Rule projects: {len(rules)}")
 
-    elif row["ensemble_ml_risk"] >= 75:
+    # -----------------------------------------------------
+    # Preserve synthetic ground truth
+    # -----------------------------------------------------
 
-        reasons.append(
-            "Elevated statistical anomaly pattern detected by ML"
-        )
+    ground_truth = pd.read_csv("data/processed_mplads.csv")
 
+    truth_columns = ["project_id"]
 
-    # -------------------------------
-    # Financial rules
-    # -------------------------------
+    if "actual_anomaly" in ground_truth.columns:
+        truth_columns.append("actual_anomaly")
 
-    if (
-        "rule_excess_expenditure" in row.index
-        and row["rule_excess_expenditure"] == 1
-    ):
+    if "anomaly_type" in ground_truth.columns:
+        truth_columns.append("anomaly_type")
 
-        reasons.append(
-            "Expenditure exceeds sanctioned amount"
-        )
+    ground_truth = ground_truth[truth_columns]
 
+    # -----------------------------------------------------
+    # Merge ML + Rules
+    # -----------------------------------------------------
 
-    if (
-        "rule_extreme_expenditure" in row.index
-        and row["rule_extreme_expenditure"] == 1
-    ):
+    hybrid = ml.merge(
+        rules,
+        on="project_id",
+        how="inner",
+        suffixes=("_ml", "_rule")
+    )
 
-        reasons.append(
-            "Expenditure is substantially above sanction"
-        )
+    print(f"Projects after ML + rule merge: {len(hybrid)}")
 
+    # -----------------------------------------------------
+    # Merge ground truth ONLY for evaluation
+    # -----------------------------------------------------
 
-    # -------------------------------
-    # UC rules
-    # -------------------------------
+    hybrid = hybrid.merge(
+        ground_truth,
+        on="project_id",
+        how="left"
+    )
 
-    if (
-        "rule_missing_uc" in row.index
-        and row["rule_missing_uc"] == 1
-    ):
+    # -----------------------------------------------------
+    # Validate required ML score
+    # -----------------------------------------------------
 
-        reasons.append(
-            "Utilization Certificate is missing"
-        )
+    if "ensemble_ml_risk" not in hybrid.columns:
 
+        print("\nERROR: ensemble_ml_risk is missing.")
 
-    if (
-        "rule_uc_mismatch" in row.index
-        and row["rule_uc_mismatch"] == 1
-    ):
+        print("\nAvailable columns:")
+        print(hybrid.columns.tolist())
 
-        reasons.append(
-            "UC and expenditure values are inconsistent"
-        )
+        return
 
+    # -----------------------------------------------------
+    # Calculate rule score
+    # -----------------------------------------------------
 
-    # -------------------------------
-    # Delay rules
-    # -------------------------------
-
-    if (
-        "rule_delay" in row.index
-        and row["rule_delay"] == 1
-    ):
-
-        reasons.append(
-            "Project completion is delayed"
-        )
-
-
-    if (
-        "rule_severe_delay" in row.index
-        and row["rule_severe_delay"] == 1
-    ):
-
-        reasons.append(
-            "Project delay exceeds one year"
-        )
-
-
-    # -------------------------------
-    # Project status
-    # -------------------------------
-
-    if (
-        "rule_not_started" in row.index
-        and row["rule_not_started"] == 1
-    ):
-
-        reasons.append(
-            "Project has not started"
-        )
-
-
-    # -------------------------------
-    # Fallback
-    # -------------------------------
-
-    if not reasons:
-
-        reasons.append(
-            "No major rule violation; statistical risk requires review"
-        )
-
-
-    return "; ".join(reasons)
-
-
-df["hybrid_explanation"] = (
-    df.apply(
-        generate_explanation,
+    hybrid["rule_risk_score"] = hybrid.apply(
+        calculate_rule_score,
         axis=1
     )
-)
 
+    # -----------------------------------------------------
+    # Hybrid score
+    # -----------------------------------------------------
 
-# ---------------------------------------------------------
-# 10. HYBRID FLAG
-# ---------------------------------------------------------
-#
-# For the synthetic benchmark, use the top 5% of
-# hybrid-risk projects.
-#
-# In production this threshold should be calibrated using
-# historical audit outcomes and operational capacity.
-#
-# ---------------------------------------------------------
+    hybrid["hybrid_risk_score"] = (
+        ML_WEIGHT * hybrid["ensemble_ml_risk"]
+        + RULE_WEIGHT * hybrid["rule_risk_score"]
+    )
 
-hybrid_threshold = (
-    df["hybrid_risk_score"]
-    .quantile(0.95)
-)
+    hybrid["hybrid_risk_score"] = hybrid[
+        "hybrid_risk_score"
+    ].round(2)
 
+    # -----------------------------------------------------
+    # Risk level
+    # -----------------------------------------------------
 
-df["hybrid_anomaly"] = (
-    df["hybrid_risk_score"]
-    >= hybrid_threshold
-).astype(int)
+    hybrid["hybrid_risk_level"] = hybrid[
+        "hybrid_risk_score"
+    ].apply(get_risk_level)
 
+    # -----------------------------------------------------
+    # Synthetic benchmark threshold
+    #
+    # Top 5% are flagged because the synthetic dataset
+    # contains exactly 5% injected anomalies.
+    # -----------------------------------------------------
 
-# ---------------------------------------------------------
-# 11. DISPLAY SUMMARY
-# ---------------------------------------------------------
+    threshold = hybrid[
+        "hybrid_risk_score"
+    ].quantile(0.95)
 
-print("\n" + "-" * 60)
-print("HYBRID MODEL RESULTS")
-print("-" * 60)
+    hybrid["hybrid_anomaly"] = (
+        hybrid["hybrid_risk_score"] >= threshold
+    ).astype(int)
 
-print(
-    f"ML weight          : {ML_WEIGHT:.0%}"
-)
+    # -----------------------------------------------------
+    # Explanation
+    # -----------------------------------------------------
 
-print(
-    f"Rule weight        : {RULE_WEIGHT:.0%}"
-)
+    def create_explanation(row):
 
-print(
-    f"Hybrid threshold   : "
-    f"{hybrid_threshold:.2f}"
-)
+        reasons = []
 
-print(
-    f"Projects flagged   : "
-    f"{int(df['hybrid_anomaly'].sum())}"
-)
+        if row.get("rule_excess_expenditure", 0):
+            reasons.append(
+                "expenditure exceeds sanction"
+            )
 
+        if row.get("rule_extreme_expenditure", 0):
+            reasons.append(
+                "expenditure >25% above sanction"
+            )
 
-# ---------------------------------------------------------
-# 12. RISK DISTRIBUTION
-# ---------------------------------------------------------
+        if row.get("rule_missing_uc", 0):
+            reasons.append(
+                "missing utilization certificate"
+            )
 
-print("\nRisk distribution:")
+        if row.get("rule_uc_mismatch", 0):
+            reasons.append(
+                "UC amount materially differs from expenditure"
+            )
 
-distribution = (
-    df["hybrid_risk_level"]
-    .value_counts()
-)
+        if row.get("rule_delay", 0):
+            reasons.append(
+                "significant completion delay"
+            )
 
+        if row.get("rule_severe_delay", 0):
+            reasons.append(
+                "completion delay exceeds one year"
+            )
 
-for level in [
-    "CRITICAL",
-    "HIGH",
-    "MEDIUM",
-    "LOW"
-]:
+        if row.get("rule_not_started", 0):
+            reasons.append(
+                "work not started"
+            )
+
+        if not reasons:
+            reasons.append(
+                "ML model identified an unusual project pattern"
+            )
+
+        return "; ".join(reasons)
+
+    hybrid["hybrid_explanation"] = hybrid.apply(
+        create_explanation,
+        axis=1
+    )
+
+    # -----------------------------------------------------
+    # Save
+    # -----------------------------------------------------
+
+    hybrid.to_csv(
+        OUTPUT_FILE,
+        index=False
+    )
+
+    # -----------------------------------------------------
+    # Summary
+    # -----------------------------------------------------
+
+    print("\nHybrid Risk Engine")
+    print("------------------")
+
+    print(f"ML weight   : {ML_WEIGHT * 100:.0f}%")
+    print(f"Rule weight : {RULE_WEIGHT * 100:.0f}%")
 
     print(
-        f"{level:<10}: "
-        f"{int(distribution.get(level, 0))}"
+        f"Hybrid threshold: {threshold:.2f}"
     )
 
+    print(
+        f"Projects flagged: "
+        f"{hybrid['hybrid_anomaly'].sum()}"
+    )
 
-# ---------------------------------------------------------
-# 13. TOP HIGH-RISK PROJECTS
-# ---------------------------------------------------------
+    print("\nRisk distribution:")
 
-print("\nTop 15 high-risk projects:")
+    print(
+        hybrid["hybrid_risk_level"]
+        .value_counts()
+        .reindex(
+            ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+            fill_value=0
+        )
+    )
 
-top_projects = (
-    df.sort_values(
+    # -----------------------------------------------------
+    # Top projects
+    # -----------------------------------------------------
+
+    print("\nTop 10 high-risk projects:")
+
+    top = hybrid.sort_values(
         "hybrid_risk_score",
         ascending=False
+    ).head(10)
+
+    for _, row in top.iterrows():
+
+        print(
+            f"{row['project_id']} | "
+            f"ML: {row['ensemble_ml_risk']:.2f} | "
+            f"Rule: {row['rule_risk_score']:.2f} | "
+            f"Hybrid: {row['hybrid_risk_score']:.2f} | "
+            f"{row['hybrid_risk_level']}"
+        )
+
+    print(
+        f"\nSaved: {OUTPUT_FILE}"
     )
-    .head(15)
-)
 
 
-display_columns = [
-
-    "project_id",
-
-    "ensemble_ml_risk",
-
-    "rule_risk_score",
-
-    "hybrid_risk_score",
-
-    "hybrid_risk_level",
-
-    "hybrid_anomaly",
-
-    "hybrid_explanation",
-
-]
-
-
-print(
-    top_projects[
-        display_columns
-    ].to_string(index=False)
-)
-
-
-# ---------------------------------------------------------
-# 14. SAVE RESULTS
-# ---------------------------------------------------------
-
-os.makedirs(
-    "data",
-    exist_ok=True
-)
-
-
-df.to_csv(
-    OUTPUT_PATH,
-    index=False
-)
-
-
-# ---------------------------------------------------------
-# 15. FINAL OUTPUT
-# ---------------------------------------------------------
-
-print("\n" + "=" * 60)
-print("HYBRID RISK ENGINE COMPLETED")
-print("=" * 60)
-
-print(
-    f"Projects processed : {len(df)}"
-)
-
-print(
-    f"ML weight           : {ML_WEIGHT:.0%}"
-)
-
-print(
-    f"Rule weight         : {RULE_WEIGHT:.0%}"
-)
-
-print(
-    f"Hybrid threshold    : "
-    f"{hybrid_threshold:.2f}"
-)
-
-print(
-    f"Flagged projects    : "
-    f"{int(df['hybrid_anomaly'].sum())}"
-)
-
-print(
-    "\nResults saved to:"
-    "\ndata/hybrid_risk_results.csv"
-)
-
-print("=" * 60)
+if __name__ == "__main__":
+    main()

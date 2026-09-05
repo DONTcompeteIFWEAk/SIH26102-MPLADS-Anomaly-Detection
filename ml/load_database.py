@@ -1,65 +1,117 @@
-import sys
 import os
-
-# Add project root to Python path
-PROJECT_ROOT = os.path.dirname(
-    os.path.dirname(
-        os.path.abspath(__file__)
-    )
-)
-
-sys.path.append(PROJECT_ROOT)
+import sys
 
 import pandas as pd
+
+# ---------------------------------------------------------
+# Add project root to Python path
+# ---------------------------------------------------------
+
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))
+)
+
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 
 from database import SessionLocal
 from db_models import Project
 
 
-# CSV containing the new hybrid ML + rule risk results
-CSV_PATH = os.path.join(
+CSV_FILE = os.path.join(
     PROJECT_ROOT,
     "data",
     "hybrid_risk_results.csv"
 )
 
 
-def load_projects():
+def clean_value(value):
+    """
+    Convert pandas NaN values to None.
+    """
+    if pd.isna(value):
+        return None
 
-    print("Loading HYBRID risk data into PostgreSQL...")
+    return value
 
-    # Check if CSV exists
-    if not os.path.exists(CSV_PATH):
-        print("ERROR: CSV file not found:")
-        print(CSV_PATH)
+
+def main():
+
+    print("=" * 60)
+    print("SIH26102 DATABASE LOADER")
+    print("=" * 60)
+
+    print("\nLoading HYBRID risk data into PostgreSQL...")
+
+    df = pd.read_csv(CSV_FILE)
+
+    print(
+        f"Found {len(df)} projects in CSV."
+    )
+
+    print("\nCSV columns:")
+    print(df.columns.tolist())
+
+    # -----------------------------------------------------
+    # Validate required hybrid columns
+    # -----------------------------------------------------
+
+    required_columns = [
+        "project_id",
+        "state_ml",
+        "district_ml",
+        "constituency_ml",
+        "sanctioned_amount_ml",
+        "actual_expenditure_ml",
+        "expenditure_ratio",
+        "completion_delay_days_ml",
+        "uc_available_ml",
+        "uc_amount_ml",
+        "work_status",
+        "sector",
+        "implementing_agency",
+        "ensemble_ml_risk",
+        "rule_risk_score",
+        "hybrid_risk_score",
+        "hybrid_risk_level",
+        "hybrid_explanation",
+    ]
+
+    missing = [
+        column
+        for column in required_columns
+        if column not in df.columns
+    ]
+
+    if missing:
+
+        print("\nERROR: Required columns are missing:")
+
+        for column in missing:
+            print(f"  - {column}")
+
         return
 
-    # Read CSV
-    df = pd.read_csv(CSV_PATH)
-
-    print(f"Found {len(df)} projects in CSV.")
-
-    # Show columns for verification
-    print("\nCSV columns:")
-    print(list(df.columns))
+    # -----------------------------------------------------
+    # Database session
+    # -----------------------------------------------------
 
     db = SessionLocal()
 
     try:
 
-        # --------------------------------------------------
-        # CLEAR OLD PROJECT DATA
-        # --------------------------------------------------
-
         print("\nClearing existing project records...")
 
         db.query(Project).delete()
 
-        # --------------------------------------------------
-        # INSERT NEW HYBRID RESULTS
-        # --------------------------------------------------
+        db.commit()
 
-        print("Inserting hybrid risk projects...")
+        print("Existing project records cleared.")
+
+        print("\nInserting hybrid risk projects...")
+
+        inserted = 0
 
         for _, row in df.iterrows():
 
@@ -69,103 +121,137 @@ def load_projects():
                     row["project_id"]
                 ),
 
-                state=str(
-                    row["state"]
+                state=clean_value(
+                    row["state_ml"]
                 ),
 
-                district=str(
-                    row["district"]
+                district=clean_value(
+                    row["district_ml"]
                 ),
 
-                constituency=str(
-                    row["constituency"]
+                constituency=clean_value(
+                    row["constituency_ml"]
                 ),
 
-                sanctioned_amount=float(
-                    row["sanctioned_amount"]
+                sanctioned_amount=clean_value(
+                    row["sanctioned_amount_ml"]
                 ),
 
-                actual_expenditure=float(
-                    row["actual_expenditure"]
+                actual_expenditure=clean_value(
+                    row["actual_expenditure_ml"]
                 ),
 
-                expenditure_ratio=float(
+                expenditure_ratio=clean_value(
                     row["expenditure_ratio"]
                 ),
 
-                completion_delay_days=int(
-                    row["completion_delay_days"]
+                completion_delay_days=clean_value(
+                    row["completion_delay_days_ml"]
                 ),
 
-                work_status=str(
+                work_status=clean_value(
                     row["work_status"]
                 ),
 
-                sector=str(
+                sector=clean_value(
                     row["sector"]
                 ),
 
-                implementing_agency=str(
+                implementing_agency=clean_value(
                     row["implementing_agency"]
                 ),
 
-                # PostgreSQL column is BOOLEAN
                 uc_available=bool(
-                    row["uc_available"]
+                    row["uc_available_ml"]
                 ),
 
-                uc_amount=float(
-                    row["uc_amount"]
+                uc_amount=clean_value(
+                    row["uc_amount_ml"]
                 ),
 
-                # --------------------------------------------------
-                # NEW HYBRID RISK VALUES
-                # --------------------------------------------------
-
-                ml_risk_score=float(
+                ml_risk_score=clean_value(
                     row["ensemble_ml_risk"]
                 ),
 
-                rule_risk_score=float(
+                rule_risk_score=clean_value(
                     row["rule_risk_score"]
                 ),
 
-                risk_score=float(
+                risk_score=clean_value(
                     row["hybrid_risk_score"]
                 ),
 
-                risk_level=str(
+                risk_level=clean_value(
                     row["hybrid_risk_level"]
                 ),
 
-                risk_explanation=str(
+                risk_explanation=clean_value(
                     row["hybrid_explanation"]
-                )
+                ),
             )
 
             db.add(project)
 
-        # --------------------------------------------------
-        # COMMIT
-        # --------------------------------------------------
+            inserted += 1
 
         db.commit()
 
-        print()
-        print("==============================================")
-        print("HYBRID DATABASE LOADING COMPLETED!")
-        print("==============================================")
-        print(f"Successfully loaded {len(df)} projects.")
-        print("Source:")
-        print("data/hybrid_risk_results.csv")
-        print("==============================================")
+        print(
+            f"\nSuccessfully inserted "
+            f"{inserted} projects."
+        )
+
+        # -------------------------------------------------
+        # Verification
+        # -------------------------------------------------
+
+        total_projects = db.query(Project).count()
+
+        critical = (
+            db.query(Project)
+            .filter(Project.risk_score >= 75)
+            .count()
+        )
+
+        high = (
+            db.query(Project)
+            .filter(
+                Project.risk_score >= 50,
+                Project.risk_score < 75
+            )
+            .count()
+        )
+
+        medium = (
+            db.query(Project)
+            .filter(
+                Project.risk_score >= 25,
+                Project.risk_score < 50
+            )
+            .count()
+        )
+
+        low = (
+            db.query(Project)
+            .filter(Project.risk_score < 25)
+            .count()
+        )
+
+        print("\nDatabase verification")
+        print("---------------------")
+        print(f"Total projects : {total_projects}")
+        print(f"CRITICAL       : {critical}")
+        print(f"HIGH           : {high}")
+        print(f"MEDIUM         : {medium}")
+        print(f"LOW            : {low}")
+
+        print("\nDatabase load completed successfully.")
 
     except Exception as e:
 
         db.rollback()
 
-        print()
-        print("ERROR while loading database:")
+        print("\nERROR while loading database:")
         print(e)
 
     finally:
@@ -174,4 +260,4 @@ def load_projects():
 
 
 if __name__ == "__main__":
-    load_projects()
+    main()

@@ -1,80 +1,164 @@
 import pandas as pd
 
 
+INPUT_FILE = "data/processed_mplads.csv"
+OUTPUT_FILE = "data/rule_results.csv"
+
+
 def apply_rules(df):
-    """
-    Apply domain-specific MPLADS anomaly rules.
+    results = pd.DataFrame()
+    results["project_id"] = df["project_id"]
 
-    Each rule produces:
-    1. A binary flag (0/1)
-    2. A human-readable explanation
-    """
+    # ---------------------------------------------------------
+    # CAG-inspired rule engine
+    # ---------------------------------------------------------
 
-    # --------------------------------------------------
-    # Rule 1: Excess expenditure
-    # --------------------------------------------------
-
-    df["rule_excess_expenditure"] = (
-        df["actual_expenditure"] >
-        df["sanctioned_amount"]
+    # 1. Expenditure exceeds sanctioned amount
+    results["rule_excess_expenditure"] = (
+        df["actual_expenditure"] > df["sanctioned_amount"]
     ).astype(int)
 
-    # --------------------------------------------------
-    # Rule 2: Extreme expenditure
-    # --------------------------------------------------
-
-    df["rule_extreme_expenditure"] = (
-        df["expenditure_ratio"] > 1.25
+    # 2. Extreme expenditure deviation
+    results["rule_extreme_expenditure"] = (
+        df["actual_expenditure"]
+        > df["sanctioned_amount"] * 1.25
     ).astype(int)
 
-    # --------------------------------------------------
-    # Rule 3: Missing Utilization Certificate
-    # --------------------------------------------------
-
-    df["rule_missing_uc"] = (
-        (df["uc_available"] == 0) &
-        (df["actual_expenditure"] > 0)
+    # 3. Missing Utilization Certificate
+    results["rule_missing_uc"] = (
+        df["uc_available"] == False
     ).astype(int)
 
-    # --------------------------------------------------
-    # Rule 4: UC / expenditure mismatch
-    # --------------------------------------------------
+    # 4. UC amount does not reasonably match expenditure
+    #
+    # A UC is considered materially mismatched when:
+    # - UC is available
+    # - expenditure is greater than zero
+    # - UC amount differs from expenditure by more than 25%
+    #
+    # This is a screening rule, NOT proof of irregularity.
+    uc_difference_pct = (
+        (df["uc_amount"] - df["actual_expenditure"]).abs()
+        / df["actual_expenditure"].replace(0, pd.NA)
+    )
 
-    df["rule_uc_mismatch"] = (
-        (
-            df["uc_expenditure_difference"] >
-            df["actual_expenditure"] * 0.20
-        ) &
-        (df["uc_available"] == 1)
+    results["rule_uc_mismatch"] = (
+        (df["uc_available"] == True)
+        & (df["actual_expenditure"] > 0)
+        & (uc_difference_pct > 0.25)
     ).astype(int)
 
-    # --------------------------------------------------
-    # Rule 5: Significant delay
-    # --------------------------------------------------
-
-    df["rule_delay"] = (
+    # 5. Significant delay
+    results["rule_delay"] = (
         df["completion_delay_days"] > 180
     ).astype(int)
 
-    # --------------------------------------------------
-    # Rule 6: Severe delay
-    # --------------------------------------------------
-
-    df["rule_severe_delay"] = (
+    # 6. Severe delay
+    results["rule_severe_delay"] = (
         df["completion_delay_days"] > 365
     ).astype(int)
 
-    # --------------------------------------------------
-    # Rule 7: Not Started despite elapsed duration
-    # --------------------------------------------------
-
-    df["rule_not_started"] = (
-        df["work_status"] == "Not Started"
+    # 7. Work not started
+    results["rule_not_started"] = (
+        df["work_status"]
+        .astype(str)
+        .str.lower()
+        .isin(["not started", "not_started", "not-started"])
     ).astype(int)
 
-    # --------------------------------------------------
-    # Count total rule violations
-    # --------------------------------------------------
+    # ---------------------------------------------------------
+    # Rule descriptions
+    # ---------------------------------------------------------
+
+    def get_rule_reasons(row):
+        reasons = []
+
+        if row["rule_excess_expenditure"]:
+            reasons.append("expenditure exceeds sanction")
+
+        if row["rule_extreme_expenditure"]:
+            reasons.append(">25% above sanction")
+
+        if row["rule_missing_uc"]:
+            reasons.append("missing UC")
+
+        if row["rule_uc_mismatch"]:
+            reasons.append("UC amount materially differs from expenditure")
+
+        if row["rule_delay"]:
+            reasons.append("significant delay")
+
+        if row["rule_severe_delay"]:
+            reasons.append("delay > one year")
+
+        if row["rule_not_started"]:
+            reasons.append("work not started")
+
+        return "; ".join(reasons)
+
+    results["rule_violation_count"] = results[
+        [
+            "rule_excess_expenditure",
+            "rule_extreme_expenditure",
+            "rule_missing_uc",
+            "rule_uc_mismatch",
+            "rule_delay",
+            "rule_severe_delay",
+            "rule_not_started",
+        ]
+    ].sum(axis=1)
+
+    results["rule_explanation"] = results.apply(
+        get_rule_reasons,
+        axis=1
+    )
+
+    # ---------------------------------------------------------
+    # Preserve useful project metadata
+    # ---------------------------------------------------------
+
+    metadata_columns = [
+        "state",
+        "district",
+        "constituency",
+        "sanctioned_amount",
+        "actual_expenditure",
+        "completion_delay_days",
+        "uc_available",
+        "uc_amount",
+        "work_status",
+        "sector",
+        "implementing_agency",
+    ]
+
+    for column in metadata_columns:
+        if column in df.columns:
+            results[column] = df[column].values
+
+    return results
+
+
+def main():
+    print("Loading processed MPLADS data...")
+
+    df = pd.read_csv(INPUT_FILE)
+
+    print(f"Total projects: {len(df)}")
+
+    results = apply_rules(df)
+
+    results.to_csv(OUTPUT_FILE, index=False)
+
+    flagged = results[
+        results["rule_violation_count"] > 0
+    ]
+
+    print("\nCAG Rule Engine Results")
+    print("-----------------------")
+    print(f"Total projects: {len(results)}")
+    print(f"Projects with rule violations: {len(flagged)}")
+
+    print("\nRule violation counts:")
 
     rule_columns = [
         "rule_excess_expenditure",
@@ -83,139 +167,32 @@ def apply_rules(df):
         "rule_uc_mismatch",
         "rule_delay",
         "rule_severe_delay",
-        "rule_not_started"
+        "rule_not_started",
     ]
 
-    df["total_rule_violations"] = df[rule_columns].sum(axis=1)
-
-    return df
-
-
-# ------------------------------------------------------
-# Generate explanations
-# ------------------------------------------------------
-
-def generate_explanation(row):
-
-    reasons = []
-
-    if row["rule_excess_expenditure"] == 1:
-        reasons.append(
-            "Expenditure exceeds sanctioned amount"
-        )
-
-    if row["rule_extreme_expenditure"] == 1:
-        reasons.append(
-            "Expenditure is more than 25% above sanction"
-        )
-
-    if row["rule_missing_uc"] == 1:
-        reasons.append(
-            "Utilization Certificate is missing"
-        )
-
-    if row["rule_uc_mismatch"] == 1:
-        reasons.append(
-            "UC amount differs significantly from expenditure"
-        )
-
-    if row["rule_delay"] == 1:
-        reasons.append(
-            "Project completion is significantly delayed"
-        )
-
-    if row["rule_severe_delay"] == 1:
-        reasons.append(
-            "Project delay exceeds one year"
-        )
-
-    if row["rule_not_started"] == 1:
-        reasons.append(
-            "Project has not started"
-        )
-
-    if not reasons:
-        return "No rule-based anomaly detected"
-
-    return "; ".join(reasons)
-
-
-# ------------------------------------------------------
-# Main
-# ------------------------------------------------------
-
-if __name__ == "__main__":
-
-    # Load processed dataset
-    df = pd.read_csv(
-        "data/processed_mplads.csv"
-    )
-
-    # Apply rules
-    df = apply_rules(df)
-
-    # Generate explanations
-    df["rule_explanation"] = df.apply(
-        generate_explanation,
-        axis=1
-    )
-
-    # Display summary
-    print("\nCAG Rule Engine Results")
-    print("=======================")
-
-    print(
-        "\nTotal projects:",
-        len(df)
-    )
-
-    print(
-        "Projects with rule violations:",
-        (df["total_rule_violations"] > 0).sum()
-    )
-
-    print("\nRule violation counts:")
-
-    for column in [
-        "rule_excess_expenditure",
-        "rule_extreme_expenditure",
-        "rule_missing_uc",
-        "rule_uc_mismatch",
-        "rule_delay",
-        "rule_severe_delay",
-        "rule_not_started"
-    ]:
+    for column in rule_columns:
         print(
-            f"{column}: {df[column].sum()}"
+            f"{column}: "
+            f"{results[column].sum()}"
         )
 
-    # Show projects with violations
     print("\nSample flagged projects:")
 
-    flagged = df[
-        df["total_rule_violations"] > 0
-    ].sort_values(
-        "total_rule_violations",
+    sample = flagged.sort_values(
+        "rule_violation_count",
         ascending=False
     ).head(10)
 
-    print(
-        flagged[
-            [
-                "project_id",
-                "total_rule_violations",
-                "rule_explanation"
-            ]
-        ].to_string(index=False)
-    )
+    for _, row in sample.iterrows():
+        print(
+            row["project_id"],
+            row["rule_violation_count"],
+            ":",
+            row["rule_explanation"]
+        )
 
-    # Save results
-    df.to_csv(
-        "data/rule_results.csv",
-        index=False
-    )
+    print(f"\nSaved: {OUTPUT_FILE}")
 
-    print(
-        "\nRule results saved to: "
-        "data/rule_results.csv"
-    )
+
+if __name__ == "__main__":
+    main()
