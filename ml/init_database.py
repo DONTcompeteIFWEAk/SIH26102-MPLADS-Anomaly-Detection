@@ -1,23 +1,45 @@
-import sys
-import os
+from sqlalchemy import text
 
-# Add project root to Python path
-sys.path.append(
-    os.path.dirname(
-        os.path.dirname(
-            os.path.abspath(__file__)
+from database import engine
+from db_models import Base
+
+
+def add_missing_columns():
+    """
+    Add columns that were introduced into the SQLAlchemy models
+    after the PostgreSQL database was originally created.
+    """
+
+    with engine.begin() as connection:
+
+        # -------------------------------------------------
+        # PROJECTS TABLE
+        # -------------------------------------------------
+
+        connection.execute(
+            text(
+                """
+                ALTER TABLE projects
+                ADD COLUMN IF NOT EXISTS project_duration_days INTEGER
+                """
+            )
         )
-    )
-)
 
-from database import engine, Base
-import db_models
+        # -------------------------------------------------
+        # WORK INVESTIGATIONS TABLE
+        # -------------------------------------------------
+
+        # create_all() handles the complete new table.
+        Base.metadata.create_all(bind=engine)
 
 
-print("Creating database tables...")
+if __name__ == "__main__":
 
-Base.metadata.create_all(
-    bind=engine
-)
+    print("Updating database schema...")
 
-print("Database tables created successfully!")
+    add_missing_columns()
+
+    print("Database schema updated successfully.")
+    print("Existing project data was preserved.")
+    print("project_duration_days column is ready.")
+    print("Work investigation table is ready.")
