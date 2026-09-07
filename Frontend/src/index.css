@@ -1,271 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --bg-dark: #090d16;
+  --bg-card: #111827;
+  --bg-card-hover: #1e293b;
+  --bg-glass: rgba(17, 24, 39, 0.75);
+  
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(6, 182, 212, 0.35);
+  
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  
+  --cyan: #06b6d4;
+  --blue: #3b82f6;
+  --violet: #8b5cf6;
+  --emerald: #10b981;
+  --amber: #f59e0b;
+  --orange: #f97316;
+  --crimson: #ef4444;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  --sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  font-family: var(--sans);
+  color-scheme: dark;
+  color: var(--text-primary);
+  background-color: var(--bg-dark);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-body {
-  margin: 0;
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
+html, body {
   margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  overflow-x: hidden;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
   border-radius: 4px;
-  color: var(--text-h);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+a {
+  color: var(--cyan);
+  text-decoration: none;
 }
-.back-button {
-  border: none;
-  padding: 10px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  background: #e5e7eb;
-  font-weight: 600;
-}
-
-.project-link {
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.project-link:hover {
+a:hover {
   text-decoration: underline;
 }
 
-.project-header {
-  background: white;
-  border-radius: 12px;
-  padding: 25px;
-
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  margin-bottom: 25px;
-
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.project-header h1 {
-  margin: 5px 0 0;
-}
-
-.label {
-  color: #6b7280;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.risk-box {
-  text-align: right;
-}
-
-.risk-box span {
-  display: block;
-  color: #6b7280;
-  font-size: 12px;
-}
-
-.risk-box strong {
-  display: block;
-  font-size: 32px;
-  margin: 5px 0;
-}
-
-.risk-box b {
-  background: #fee2e2;
-  color: #b91c1c;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-}
-
-.investigation-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.detail-list {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.detail-list div {
-  display: flex;
-  justify-content: space-between;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #eee;
-}
-
-.detail-list span {
-  color: #6b7280;
-}
-
-.score-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-}
-
-.score-card {
-  padding: 20px;
-  border-radius: 10px;
-  background: #f8fafc;
-}
-
-.score-card span {
-  display: block;
-  color: #6b7280;
-  margin-bottom: 8px;
-}
-
-.score-card strong {
-  font-size: 28px;
-}
-
-.explanation {
-  display: flex;
-  gap: 12px;
-  padding: 18px;
-  background: #fff7ed;
-  border-radius: 8px;
-}
-
-.explanation p {
-  margin: 0;
-  line-height: 1.6;
-}
-
-.action-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.action-list div {
-  padding: 15px;
-  background: #f8fafc;
-  border-radius: 8px;
-}
-
-@media (max-width: 800px) {
-
-  .investigation-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .score-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .project-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-  }
-
-  .risk-box {
-    text-align: left;
-  }
+button {
+  font-family: inherit;
+  cursor: pointer;
 }

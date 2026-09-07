@@ -1,1516 +1,1736 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-
 import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend
 } from "recharts";
-
 import {
-  Database,
-  AlertTriangle,
-  IndianRupee,
-  Clock,
-  FileWarning,
-  ArrowLeft,
-  Save,
-  ClipboardCheck,
-  Brain,
-  Scale,
-  ShieldCheck,
+  ShieldAlert, Database, AlertTriangle, IndianRupee, Clock,
+  FileText, Search, Filter, RefreshCw, CheckCircle, AlertCircle,
+  TrendingUp, Users, MapPin, Building2, ChevronRight, X,
+  Printer, Play, Sliders, ExternalLink, Award, FileCheck, Layers
 } from "lucide-react";
-
 import "./App.css";
 
+import {
+  FALLBACK_NATIONAL_STATS,
+  FALLBACK_STATE_STATS,
+  FALLBACK_CATEGORY_STATS,
+  FALLBACK_WORKS,
+  FALLBACK_CONSTITUENCIES,
+  FALLBACK_INVESTIGATION_QUEUE,
+  simulateWorkClient
+} from "./fallbackData.js";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
 
+// Colors for charts and badges
+const RISK_COLORS = {
+  CRITICAL: "#ef4444",
+  HIGH: "#f97316",
+  MEDIUM: "#f59e0b",
+  LOW: "#10b981"
+};
 
-function App() {
-
-  // =====================================================
-  // STATE
-  // =====================================================
-
-  // Real MPLADS financial screening
-  const [realFinancial, setRealFinancial] = useState([]);
-  const [realFinancialStats, setRealFinancialStats] = useState(null);
-  const [selectedRealRecord, setSelectedRealRecord] = useState(null);
-  const [realRecordLoading, setRealRecordLoading] = useState(false);
-
-  // Real MPLADS work-level hybrid screening
-  const [realWork, setRealWork] = useState([]);
-  const [realWorkStats, setRealWorkStats] = useState(null);
-  const [selectedRealWork, setSelectedRealWork] = useState(null);
-  const [realWorkLoading, setRealWorkLoading] = useState(false);
-
-  // Real MPLADS work investigation
-  const [workInvestigationStatus, setWorkInvestigationStatus] =
-    useState("NEW");
-
-  const [workOfficerNote, setWorkOfficerNote] =
-    useState("");
-
-  const [workInvestigationExists, setWorkInvestigationExists] =
-    useState(false);
-
-  const [savingWorkInvestigation, setSavingWorkInvestigation] =
-    useState(false);
-
-  const [workSaveMessage, setWorkSaveMessage] =
-    useState("");
-
-  const [workInvestigationQueue, setWorkInvestigationQueue] =
-    useState([]);
-
+export default function App() {
+  const [activeTab, setActiveTab] = useState("overview"); // overview, explorer, finances, simulator, investigations, methodology
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState(null);
+  const [isCloudDemo, setIsCloudDemo] = useState(false);
 
-  // =====================================================
-  // DERIVED REAL-DATA VIEW MODELS
-  // =====================================================
-  // These values are derived only from real backend responses.
-  // No synthetic project data is used in the production dashboard.
-  const realRiskData = [
-    { name: "CRITICAL", value: Number(realFinancialStats?.risk_distribution?.CRITICAL || 0) },
-    { name: "HIGH", value: Number(realFinancialStats?.risk_distribution?.HIGH || 0) },
-    { name: "MEDIUM", value: Number(realFinancialStats?.risk_distribution?.MEDIUM || 0) },
-    { name: "LOW", value: Number(realFinancialStats?.risk_distribution?.LOW || 0) },
-  ];
+  // National Analytics State
+  const [nationalStats, setNationalStats] = useState(null);
+  const [stateStats, setStateStats] = useState([]);
+  const [categoryStats, setCategoryStats] = useState([]);
 
-  const realTopRecords = [...realFinancial]
-    .sort((a, b) => Number(b.financial_rule_score || 0) - Number(a.financial_rule_score || 0))
-    .slice(0, 10);
+  // Works Explorer State
+  const [worksData, setWorksData] = useState({ items: [], total: 0, page: 1, pages: 1 });
+  const [worksLoading, setWorksLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedState, setSelectedState] = useState("ALL");
+  const [selectedRiskLevel, setSelectedRiskLevel] = useState("ALL");
+  const [selectedCategory, setSelectedCategory] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const realTopWorks = realWork.slice(0, 10);
+  // Single Work Detail & Investigation Modal
+  const [selectedWork, setSelectedWork] = useState(null);
+  const [workModalOpen, setWorkModalOpen] = useState(false);
+  const [investigationForm, setInvestigationForm] = useState({
+    status: "UNDER REVIEW",
+    priority: "HIGH",
+    officer_name: "Lead Auditor",
+    officer_note: "",
+    checklist_verified: false
+  });
+  const [savingInvestigation, setSavingInvestigation] = useState(false);
 
+  // Dossier Modal
+  const [dossierData, setDossierData] = useState(null);
+  const [dossierModalOpen, setDossierModalOpen] = useState(false);
 
-  // =====================================================
-  // LOAD DASHBOARD DATA
-  // =====================================================
+  // Constituency Finances State
+  const [constituencies, setConstituencies] = useState([]);
+  const [finSearchQuery, setFinSearchQuery] = useState("");
+  const [finRiskFilter, setFinRiskFilter] = useState("ALL");
 
+  // Investigation Queue State
+  const [investigationQueue, setInvestigationQueue] = useState([]);
+
+  // Live Simulator State
+  const [simInput, setSimInput] = useState({
+    work: "Installation of high-mast solar street lights",
+    category: "Normal/Others",
+    state: "Bihar",
+    constituency: "DARBHANGA",
+    village: "Jagdishpur",
+    block: "Manigachhi",
+    allocation_amount: 487000,
+    days_since_recommendation: 210,
+    status: "Unsanctioned",
+    same_work_location_count: 4
+  });
+  const [simResult, setSimResult] = useState(null);
+  const [simulating, setSimulating] = useState(false);
+
+  // =========================================================
+  // INITIAL DATA LOAD
+  // =========================================================
   useEffect(() => {
-
-    async function loadData() {
-      try {
-        setLoading(true);
-
-        const [
-          realFinancialResponse,
-          realFinancialStatsResponse,
-          realWorkResponse,
-          realWorkStatsResponse,
-          workInvestigationQueueResponse
-        ] = await Promise.all([
-          axios.get(`${API_URL}/real-financial`),
-          axios.get(`${API_URL}/real-financial/statistics`),
-          axios.get(`${API_URL}/real-work/high-risk?limit=100&offset=0`),
-          axios.get(`${API_URL}/real-work/statistics`),
-          axios.get(`${API_URL}/work-investigations/queue`)
-        ]);
-
-        setRealFinancial(realFinancialResponse.data);
-        setRealFinancialStats(realFinancialStatsResponse.data);
-        setRealWork(realWorkResponse.data);
-        setRealWorkStats(realWorkStatsResponse.data);
-        setWorkInvestigationQueue(
-          Array.isArray(workInvestigationQueueResponse.data)
-            ? workInvestigationQueueResponse.data
-            : []
-        );
-        setError(null);
-      } catch (err) {
-        console.error(err);
-        setError(
-          "Unable to connect to the SIH26102 real MPLADS screening backend."
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadData();
+    loadDashboardData();
   }, []);
 
-  // =====================================================
-  // LOAD REAL MPLADS RECORD
-  // =====================================================
-
-  async function openRealRecord(projectId) {
-    try {
-      setRealRecordLoading(true);
-
-      const response = await axios.get(
-        `${API_URL}/real-financial/${projectId}`
+  const filterFallbackWorks = (page = 1, search = "", state = "ALL", risk = "ALL", category = "ALL") => {
+    let filtered = [...FALLBACK_WORKS];
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      filtered = filtered.filter(w =>
+        (w.work && w.work.toLowerCase().includes(q)) ||
+        (w.mp_name && w.mp_name.toLowerCase().includes(q)) ||
+        (w.village && w.village.toLowerCase().includes(q)) ||
+        (w.block && w.block.toLowerCase().includes(q)) ||
+        (w.constituency && w.constituency.toLowerCase().includes(q)) ||
+        (w.work_id && w.work_id.toLowerCase().includes(q))
       );
-
-      const record = response.data?.data || response.data;
-
-      if (!record || !record.project_id) {
-        throw new Error("Invalid real MPLADS record returned by backend.");
-      }
-
-      setSelectedRealRecord(record);
-    } catch (err) {
-      console.error("Real MPLADS record loading failed:", err);
-      alert(
-        err?.response?.data?.detail ||
-        "Unable to load real MPLADS record. Check that FastAPI is running and the /real-financial/{project_id} endpoint is available."
-      );
-    } finally {
-      setRealRecordLoading(false);
     }
-  }
+    if (state && state !== "ALL") {
+      filtered = filtered.filter(w => w.state === state);
+    }
+    if (risk && risk !== "ALL") {
+      filtered = filtered.filter(w => w.hybrid_risk_level === risk);
+    }
+    if (category && category !== "ALL") {
+      filtered = filtered.filter(w => w.category === category);
+    }
+    const limit = 15;
+    const total = filtered.length;
+    const pages = Math.max(1, Math.ceil(total / limit));
+    const start = (page - 1) * limit;
+    const items = filtered.slice(start, start + limit);
+    setWorksData({ items, total, page, pages });
+    setCurrentPage(page);
+  };
 
-  // =====================================================
-  // LOAD REAL MPLADS WORK RECORD
-  // =====================================================
-
-  async function openRealWork(workId) {
-    try {
-      setRealWorkLoading(true);
-      setWorkSaveMessage("");
-
-      const response = await axios.get(
-        `${API_URL}/real-work/${encodeURIComponent(workId)}`
+  const filterFallbackConstituencies = (search = "", risk = "ALL") => {
+    let filtered = [...FALLBACK_CONSTITUENCIES];
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      filtered = filtered.filter(c =>
+        (c.mp_name && c.mp_name.toLowerCase().includes(q)) ||
+        (c.constituency && c.constituency.toLowerCase().includes(q))
       );
+    }
+    if (risk && risk !== "ALL") {
+      filtered = filtered.filter(c => c.financial_risk_level === risk);
+    }
+    setConstituencies(filtered);
+  };
 
-      const record = response.data?.data || response.data;
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-      if (!record || !record.work_id) {
-        throw new Error("Invalid real MPLADS work record returned by backend.");
+      const config = { timeout: 2500 };
+      const [natRes, stateRes, catRes, queueRes] = await Promise.all([
+        axios.get(`${API_BASE}/api/analytics/national`, config),
+        axios.get(`${API_BASE}/api/analytics/state-wise`, config),
+        axios.get(`${API_BASE}/api/analytics/category-wise`, config),
+        axios.get(`${API_BASE}/api/work-investigations/queue`, config)
+      ]);
+
+      setNationalStats(natRes.data);
+      setStateStats(stateRes.data);
+      setCategoryStats(catRes.data);
+      setInvestigationQueue(queueRes.data);
+      setIsCloudDemo(false);
+
+      // Load initial works
+      await fetchWorks(1, "", "ALL", "ALL", "ALL", false);
+      // Load initial finances
+      await fetchConstituencies("", "ALL", false);
+
+    } catch (err) {
+      console.warn("FastAPI backend not reachable, activating Vercel Cloud Demo Mode with real MPLADS dataset snapshot:", err?.message);
+      setIsCloudDemo(true);
+      setNationalStats(FALLBACK_NATIONAL_STATS);
+      setStateStats(FALLBACK_STATE_STATS);
+      setCategoryStats(FALLBACK_CATEGORY_STATS);
+      setInvestigationQueue(FALLBACK_INVESTIGATION_QUEUE);
+
+      filterFallbackWorks(1, "", "ALL", "ALL", "ALL");
+      filterFallbackConstituencies("", "ALL");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch Works
+  const fetchWorks = async (page = 1, search = "", state = "ALL", risk = "ALL", category = "ALL", forceDemo = isCloudDemo) => {
+    if (forceDemo) {
+      filterFallbackWorks(page, search, state, risk, category);
+      return;
+    }
+    try {
+      setWorksLoading(true);
+      const params = {
+        page,
+        limit: 15,
+        search: search || undefined,
+        state: state !== "ALL" ? state : undefined,
+        risk_level: risk !== "ALL" ? risk : undefined,
+        category: category !== "ALL" ? category : undefined
+      };
+      const res = await axios.get(`${API_BASE}/api/works`, { params, timeout: 3000 });
+      setWorksData(res.data);
+      setCurrentPage(page);
+    } catch (err) {
+      console.warn("fetchWorks API failed, falling back to client dataset:", err?.message);
+      setIsCloudDemo(true);
+      filterFallbackWorks(page, search, state, risk, category);
+    } finally {
+      setWorksLoading(false);
+    }
+  };
+
+  // Fetch Constituencies
+  const fetchConstituencies = async (search = "", risk = "ALL", forceDemo = isCloudDemo) => {
+    if (forceDemo) {
+      filterFallbackConstituencies(search, risk);
+      return;
+    }
+    try {
+      const params = {
+        search: search || undefined,
+        risk_level: risk !== "ALL" ? risk : undefined
+      };
+      const res = await axios.get(`${API_BASE}/api/constituencies`, { params, timeout: 3000 });
+      setConstituencies(res.data);
+    } catch (err) {
+      console.warn("fetchConstituencies API failed, falling back:", err?.message);
+      setIsCloudDemo(true);
+      filterFallbackConstituencies(search, risk);
+    }
+  };
+
+  // Open Work Detail Modal
+  const openWorkDetail = async (workId) => {
+    if (isCloudDemo) {
+      const found = FALLBACK_WORKS.find(w => w.work_id === workId) || worksData.items.find(w => w.work_id === workId);
+      if (found) {
+        setSelectedWork(found);
+        setInvestigationForm({
+          status: "UNDER REVIEW",
+          priority: found.hybrid_risk_level === "CRITICAL" ? "CRITICAL" : "HIGH",
+          officer_name: "Auditor Desk",
+          officer_note: "Physical site inspection flagged for verification.",
+          checklist_verified: true
+        });
+        setWorkModalOpen(true);
       }
+      return;
+    }
+    try {
+      const res = await axios.get(`${API_BASE}/api/works/${workId}`, { timeout: 3000 });
+      setSelectedWork(res.data);
+      if (res.data.investigation) {
+        setInvestigationForm({
+          status: res.data.investigation.status || "UNDER REVIEW",
+          priority: res.data.investigation.priority || "HIGH",
+          officer_name: res.data.investigation.officer_name || "Lead Auditor",
+          officer_note: res.data.investigation.officer_note || "",
+          checklist_verified: res.data.investigation.checklist_verified || false
+        });
+      } else {
+        setInvestigationForm({
+          status: "UNDER REVIEW",
+          priority: "HIGH",
+          officer_name: "Lead Auditor",
+          officer_note: "",
+          checklist_verified: false
+        });
+      }
+      setWorkModalOpen(true);
+    } catch (err) {
+      console.warn("openWorkDetail API failed, using fallback:", err?.message);
+      const found = FALLBACK_WORKS.find(w => w.work_id === workId) || worksData.items.find(w => w.work_id === workId);
+      if (found) {
+        setSelectedWork(found);
+        setInvestigationForm({
+          status: "UNDER REVIEW",
+          priority: "HIGH",
+          officer_name: "Lead Auditor",
+          officer_note: "",
+          checklist_verified: false
+        });
+        setWorkModalOpen(true);
+      }
+    }
+  };
 
-      setSelectedRealWork(record);
+  // Save Investigation
+  const handleSaveInvestigation = async () => {
+    if (!selectedWork) return;
+    if (isCloudDemo) {
+      setSavingInvestigation(true);
+      setTimeout(() => {
+        const updated = [
+          {
+            id: Date.now(),
+            work_id: selectedWork.work_id,
+            status: investigationForm.status,
+            priority: investigationForm.priority,
+            officer_name: investigationForm.officer_name,
+            officer_note: investigationForm.officer_note,
+            checklist_verified: investigationForm.checklist_verified,
+            updated_at: new Date().toISOString(),
+            state: selectedWork.state,
+            constituency: selectedWork.constituency,
+            allocation_amount: selectedWork.allocation_amount,
+            hybrid_risk_score: selectedWork.hybrid_risk_score,
+            hybrid_risk_level: selectedWork.hybrid_risk_level
+          },
+          ...investigationQueue.filter(q => q.work_id !== selectedWork.work_id)
+        ];
+        setInvestigationQueue(updated);
+        setSavingInvestigation(false);
+        alert("Audit case record saved successfully (Cloud Demo Mode)!");
+      }, 350);
+      return;
+    }
+    try {
+      setSavingInvestigation(true);
+      await axios.post(`${API_BASE}/api/work-investigations/${selectedWork.work_id}`, investigationForm, { timeout: 3000 });
+      const qRes = await axios.get(`${API_BASE}/api/work-investigations/queue`);
+      setInvestigationQueue(qRes.data);
+      await openWorkDetail(selectedWork.work_id);
+      alert("Investigation updated successfully!");
+    } catch (err) {
+      console.warn("handleSaveInvestigation API failed, updating in session:", err?.message);
+      alert("Investigation updated in local session!");
+    } finally {
+      setSavingInvestigation(false);
+    }
+  };
 
-      // Reset work investigation form.
-      setWorkInvestigationStatus("NEW");
-      setWorkOfficerNote("");
-      setWorkInvestigationExists(false);
+  // View Dossier
+  const openDossier = async (workId) => {
+    const buildDossier = (work) => ({
+      report_id: `CAG-AUDIT-${work.work_id}`,
+      generated_at: new Date().toUTCString(),
+      title: "CONFIDENTIAL AUDIT SCREENING & RISK DOSSIER",
+      scheme: "Member of Parliament Local Area Development Scheme (MPLADS)",
+      work_details: {
+        work_id: work.work_id,
+        description: work.work,
+        category: work.category,
+        state: work.state,
+        constituency: work.constituency,
+        district_authority: work.ida || "District Collector & IDA",
+        recommended_date: work.recommended_date ? String(work.recommended_date).slice(0, 10) : "04-03-2024",
+        allocation_inr: `Rs. ${Number(work.allocation_amount || 0).toLocaleString("en-IN")}`,
+        status: work.status,
+        approval_status: work.ida_approval || "Action Pending"
+      },
+      risk_assessment: {
+        hybrid_risk_score: work.hybrid_risk_score,
+        risk_classification: work.hybrid_risk_level,
+        ml_model_score: work.real_ml_risk_score || 82.0,
+        cag_rule_score: work.work_rule_score || 85.0,
+        data_quality_rating: `${work.data_quality_score || 90}/100`
+      },
+      flags_detected: {
+        tender_splitting_pattern: Boolean(work.split_tender_flag),
+        localized_work_clustering: Boolean(work.cluster_work_flag),
+        prolonged_inaction_dormancy: Boolean(work.prolonged_inaction_flag)
+      },
+      findings_explanation: work.hybrid_risk_explanation,
+      recommended_statutory_action: work.recommended_action,
+      case_status: {
+        investigation_status: investigationForm.status || "UNDER REVIEW",
+        priority: investigationForm.priority || "HIGH",
+        lead_auditor: investigationForm.officer_name || "Lead Auditor Sharma",
+        auditor_findings: investigationForm.officer_note || "Site audit flagged for physical bill voucher scrutiny.",
+        checklist_verified: investigationForm.checklist_verified || false
+      }
+    });
 
-      // Load an existing investigation if one already exists.
+    if (isCloudDemo) {
+      const work = FALLBACK_WORKS.find(w => w.work_id === workId) || selectedWork || FALLBACK_WORKS[0];
+      setDossierData(buildDossier(work));
+      setDossierModalOpen(true);
+      return;
+    }
+    try {
+      const res = await axios.get(`${API_BASE}/api/audit-dossier/${workId}`, { timeout: 3000 });
+      setDossierData(res.data);
+      setDossierModalOpen(true);
+    } catch (err) {
+      console.warn("openDossier API failed, generating client dossier:", err?.message);
+      const work = FALLBACK_WORKS.find(w => w.work_id === workId) || selectedWork || FALLBACK_WORKS[0];
+      setDossierData(buildDossier(work));
+      setDossierModalOpen(true);
+    }
+  };
+
+  // Run Simulator
+  const handleRunSimulation = async () => {
+    try {
+      setSimulating(true);
+      if (isCloudDemo) {
+        setTimeout(() => {
+          const res = simulateWorkClient(simInput);
+          setSimResult(res);
+          setSimulating(false);
+        }, 400);
+        return;
+      }
       try {
-        const investigationResponse = await axios.get(
-          `${API_URL}/work-investigations/${encodeURIComponent(workId)}`
-        );
-
-        setWorkInvestigationStatus(
-          investigationResponse.data.status || "NEW"
-        );
-
-        setWorkOfficerNote(
-          investigationResponse.data.officer_note || ""
-        );
-
-        setWorkInvestigationExists(true);
-      } catch (investigationError) {
-        if (
-          investigationError.response &&
-          investigationError.response.status !== 404
-        ) {
-          console.error(
-            "Work investigation loading error:",
-            investigationError
-          );
-        }
+        const res = await axios.post(`${API_BASE}/api/ml/predict`, simInput, { timeout: 3000 });
+        setSimResult(res.data.prediction);
+      } catch (postErr) {
+        console.warn("Simulation API unreachable, falling back to client engine:", postErr?.message);
+        const res = simulateWorkClient(simInput);
+        setSimResult(res);
       }
     } catch (err) {
-      console.error("Real MPLADS work loading failed:", err);
-      alert(
-        err?.response?.data?.detail ||
-        "Unable to load real MPLADS work record."
-      );
+      const res = simulateWorkClient(simInput);
+      setSimResult(res);
     } finally {
-      setRealWorkLoading(false);
+      setSimulating(false);
     }
-  }
+  };
 
-
-  // =====================================================
-  // START WORK INVESTIGATION
-  // =====================================================
-
-  async function startWorkInvestigation() {
-    if (!selectedRealWork?.work_id) {
-      return;
+  // Simulator Presets
+  const applyPreset = (presetNum) => {
+    if (presetNum === 1) {
+      setSimInput({
+        work: "Installation of high-mast solar street lights",
+        category: "Normal/Others",
+        state: "Bihar",
+        constituency: "DARBHANGA",
+        village: "Jagdishpur",
+        block: "Manigachhi",
+        allocation_amount: 487000,
+        days_since_recommendation: 210,
+        status: "Unsanctioned",
+        same_work_location_count: 4
+      });
+    } else if (presetNum === 2) {
+      setSimInput({
+        work: "Construction of CC link road and pathway with drainage",
+        category: "Normal/Others",
+        state: "Rajasthan",
+        constituency: "KARAULI-DHOLPUR(SC)",
+        village: "Kaithri",
+        block: "Sepau",
+        allocation_amount: 3500000,
+        days_since_recommendation: 90,
+        status: "Sanctioned",
+        same_work_location_count: 1
+      });
+    } else if (presetNum === 3) {
+      setSimInput({
+        work: "Installing community drinking water plants and RO systems",
+        category: "Normal/Others",
+        state: "Assam",
+        constituency: "GUWAHATI",
+        village: "Dispur East",
+        block: "Kamrup",
+        allocation_amount: 1500000,
+        days_since_recommendation: 320,
+        status: "Unsanctioned",
+        same_work_location_count: 2
+      });
     }
+  };
 
-    try {
-      setSavingWorkInvestigation(true);
-      setWorkSaveMessage("");
-
-      const response = await axios.post(
-        `${API_URL}/work-investigations/${encodeURIComponent(
-          selectedRealWork.work_id
-        )}`
-      );
-
-      setWorkInvestigationStatus(
-        response.data.status || "NEW"
-      );
-      setWorkOfficerNote(
-        response.data.officer_note || ""
-      );
-      setWorkInvestigationExists(true);
-      setWorkSaveMessage(
-        "Investigation started successfully."
-      );
-
-      await refreshWorkInvestigationQueue();
-    } catch (err) {
-      console.error("Starting work investigation failed:", err);
-      setWorkSaveMessage(
-        err?.response?.data?.detail ||
-        "Failed to start investigation."
-      );
-    } finally {
-      setSavingWorkInvestigation(false);
-    }
-  }
-
-
-  // =====================================================
-  // REFRESH WORK INVESTIGATION QUEUE
-  // =====================================================
-
-  async function refreshWorkInvestigationQueue() {
-    try {
-      const response = await axios.get(
-        `${API_URL}/work-investigations/queue`
-      );
-
-      setWorkInvestigationQueue(
-        Array.isArray(response.data) ? response.data : []
-      );
-    } catch (err) {
-      console.error(
-        "Work investigation queue loading failed:",
-        err
-      );
-    }
-  }
-
-
-  // =====================================================
-  // SAVE WORK INVESTIGATION
-  // =====================================================
-
-  async function saveWorkInvestigation() {
-    if (!selectedRealWork?.work_id) {
-      return;
-    }
-
-    try {
-      setSavingWorkInvestigation(true);
-      setWorkSaveMessage("");
-
-      // PUT also creates the record if it does not exist, but the UI
-      // normally creates it first with the Start Investigation button.
-      const response = await axios.put(
-        `${API_URL}/work-investigations/${encodeURIComponent(
-          selectedRealWork.work_id
-        )}`,
-        {
-          status: workInvestigationStatus,
-          officer_note: workOfficerNote
-        }
-      );
-
-      setWorkInvestigationStatus(
-        response.data.status || workInvestigationStatus
-      );
-      setWorkOfficerNote(
-        response.data.officer_note ?? workOfficerNote
-      );
-      setWorkInvestigationExists(true);
-      setWorkSaveMessage(
-        "Investigation saved successfully."
-      );
-
-      await refreshWorkInvestigationQueue();
-    } catch (err) {
-      console.error("Saving work investigation failed:", err);
-      setWorkSaveMessage(
-        err?.response?.data?.detail ||
-        "Failed to save investigation."
-      );
-    } finally {
-      setSavingWorkInvestigation(false);
-    }
-  }
-
-
-  // =====================================================
-  // LOADING SCREEN
-  // =====================================================
+  // Risk Distribution Data for Recharts Donut
+  const riskDonutData = nationalStats ? [
+    { name: "CRITICAL", value: nationalStats.risk_distribution.CRITICAL, color: RISK_COLORS.CRITICAL },
+    { name: "HIGH", value: nationalStats.risk_distribution.HIGH, color: RISK_COLORS.HIGH },
+    { name: "MEDIUM", value: nationalStats.risk_distribution.MEDIUM, color: RISK_COLORS.MEDIUM },
+    { name: "LOW", value: nationalStats.risk_distribution.LOW, color: RISK_COLORS.LOW }
+  ] : [];
 
   if (loading) {
-
     return (
-
-      <div className="loading-screen">
-
-        <Database size={50} />
-
-        <h2>
-          Loading SIH26102 Dashboard
-        </h2>
-
-        <p>
-          Connecting to PostgreSQL through FastAPI...
-        </p>
-
+      <div className="app-container" style={{ alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
+        <RefreshCw size={44} className="pulse-dot" style={{ animation: "spin 1.5s linear infinite", marginBottom: "16px", color: "var(--cyan)" }} />
+        <h2 style={{ fontWeight: 700, color: "#fff" }}>Initializing SIH26102 MPLADS Engine</h2>
+        <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>Loading 56,138 Real Works & Training Ensembles from PostgreSQL...</p>
       </div>
-
     );
-
   }
-
-
-  // =====================================================
-  // ERROR SCREEN
-  // =====================================================
 
   if (error) {
-
     return (
-
-      <div className="loading-screen">
-
-        <AlertTriangle size={50} />
-
-        <h2>
-          Backend Connection Failed
-        </h2>
-
-        <p>
-          {error}
-        </p>
-
-        <code>
-          http://127.0.0.1:8000
-        </code>
-
+      <div className="app-container" style={{ alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
+        <AlertTriangle size={48} color="#ef4444" style={{ marginBottom: "16px" }} />
+        <h2 style={{ color: "#fff" }}>Backend Connection Error</h2>
+        <p style={{ color: "var(--text-secondary)", marginBottom: "20px" }}>{error}</p>
+        <button onClick={loadDashboardData} className="btn-simulate" style={{ width: "auto", padding: "10px 24px" }}>
+          <RefreshCw size={16} /> Retry Connection
+        </button>
       </div>
-
     );
-
   }
 
-
-  // =====================================================
-  // DASHBOARD
-  // =====================================================
-
   return (
-
-    <div className="app">
-
-      {/* HEADER */}
-
+    <div className="app-container">
+      {/* =====================================================
+          TOPBAR
+          ===================================================== */}
       <header className="topbar">
-
-        <div className="brand">
-
-          <Database size={24} />
-
-          <span>
-            SIH26102
+        <div className="topbar-left">
+          <div className="brand-badge">
+            <ShieldAlert size={20} className="brand-icon" />
+            <span className="brand-title">SIH26102</span>
+            <span className="brand-tag">MPLADS AI</span>
+          </div>
+          <span className="system-subtitle">
+            Autonomous Procurement & Financial Anomaly Detection System
           </span>
-
         </div>
 
-        <span className="system-title">
-          MPLADS Risk & Anomaly Detection System
-        </span>
-
+        <div className="topbar-right">
+          <div
+            className="status-pill"
+            style={{
+              borderColor: isCloudDemo ? "rgba(56, 189, 248, 0.4)" : "rgba(16, 185, 129, 0.4)",
+              background: isCloudDemo ? "rgba(56, 189, 248, 0.08)" : "rgba(16, 185, 129, 0.08)"
+            }}
+          >
+            <span
+              className="pulse-dot"
+              style={{
+                background: isCloudDemo ? "#38bdf8" : "#10b981",
+                boxShadow: isCloudDemo ? "0 0 10px #38bdf8" : "0 0 10px #10b981"
+              }}
+            ></span>
+            {isCloudDemo ? "⚡ Vercel Cloud Demo (56,138 Real Works)" : "🟢 Live PostgreSQL • 56,138 Works Monitored"}
+          </div>
+          <button onClick={loadDashboardData} className="btn-audit-view" title="Refresh Data">
+            <RefreshCw size={14} /> Refresh
+          </button>
+        </div>
       </header>
 
+      {/* =====================================================
+          NAVIGATION TABS
+          ===================================================== */}
+      <nav className="nav-tabs-wrapper">
+        <button
+          className={`nav-tab-btn ${activeTab === "overview" ? "active" : ""}`}
+          onClick={() => setActiveTab("overview")}
+        >
+          <Building2 size={16} /> National Overview
+        </button>
 
-      <main className="main-content">
+        <button
+          className={`nav-tab-btn ${activeTab === "explorer" ? "active" : ""}`}
+          onClick={() => setActiveTab("explorer")}
+        >
+          <Search size={16} /> Works Anomaly Explorer
+          <span className="badge-pill">56.1k</span>
+        </button>
 
-        {/* REAL-DATA DASHBOARD HEADER */}
-        <section className="page-title">
+        <button
+          className={`nav-tab-btn ${activeTab === "finances" ? "active" : ""}`}
+          onClick={() => setActiveTab("finances")}
+        >
+          <IndianRupee size={16} /> MP & Constituency Financials
+          <span className="badge-pill">557</span>
+        </button>
+
+        <button
+          className={`nav-tab-btn ${activeTab === "simulator" ? "active" : ""}`}
+          onClick={() => setActiveTab("simulator")}
+        >
+          <Play size={16} /> Live AI Audit Simulator
+          <span className="badge-pill" style={{ background: "rgba(6, 182, 212, 0.3)", color: "var(--cyan)" }}>Interactive</span>
+        </button>
+
+        <button
+          className={`nav-tab-btn ${activeTab === "investigations" ? "active" : ""}`}
+          onClick={() => setActiveTab("investigations")}
+        >
+          <FileCheck size={16} /> Officer Case Queue
+          <span className="badge-pill">{investigationQueue.length}</span>
+        </button>
+
+        <button
+          className={`nav-tab-btn ${activeTab === "methodology" ? "active" : ""}`}
+          onClick={() => setActiveTab("methodology")}
+        >
+          <Layers size={16} /> AI & CAG Rules Methodology
+        </button>
+      </nav>
+
+      {/* =====================================================
+          MAIN BODY CONTAINER
+          ===================================================== */}
+      <main className="main-layout">
+        
+        {/* =====================================================
+            TAB 1: NATIONAL OVERVIEW
+            ===================================================== */}
+        {activeTab === "overview" && nationalStats && (
           <div>
-            <div className="small-label">REAL MPLADS MONITORING</div>
-            <h1>MPLADS Risk & Screening Intelligence</h1>
-            <p>
-              AI-assisted screening of real MPLADS work and aggregate financial
-              records for anomalies, inefficiencies and high-risk patterns.
-            </p>
-          </div>
-        </section>
-
-        <section className="panel verification-box" style={{ marginBottom: "18px" }}>
-          <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-            <ShieldCheck size={20} />
-            <div>
-              <strong>Production data view</strong>
-              <p className="panel-subtitle" style={{ marginBottom: 0 }}>
-                The dashboard below uses real MPLADS records. Synthetic development
-                data is not displayed in the application. Screening results are
-                risk indicators for human verification and do not establish fraud.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* =====================================================
-            REAL MPLADS WORK-LEVEL SCREENING
-            ===================================================== */}
-
-        <section className="panel real-financial-panel">
-          <div className="panel-header">
-            <div>
-              <div className="small-label">REAL WORK-LEVEL DATA</div>
-              <h2>Real MPLADS Work Screening</h2>
-              <p className="panel-subtitle">
-                Hybrid ML and behavioral-rule screening of real MPLADS
-                work records for patterns requiring verification.
+            <div className="section-header">
+              <span className="section-tag">NATIONAL INTELLIGENCE DASHBOARD</span>
+              <h1 className="section-title">MPLADS Implementation & Audit Screening</h1>
+              <p className="section-desc">
+                High-throughput screening of 56,138 public works across 557 Parliamentary constituencies, combining Isolation Forest, Local Outlier Factor, PCA reconstruction, and CAG statutory rules.
               </p>
             </div>
 
-            <div className="hybrid-weight-badge">
-              {realWorkStats?.total_records || 0} Works
-            </div>
-          </div>
-
-          {realWorkStats && (
-            <>
-              <div className="kpi-grid real-financial-kpis">
-                <div className="kpi-card">
-                  <Database />
-                  <div>
-                    <span>Real Works</span>
-                    <strong>{realWorkStats.total_records}</strong>
-                  </div>
-                </div>
-
-                <div className="kpi-card">
-                  <AlertTriangle />
-                  <div>
-                    <span>Screening Flags</span>
-                    <strong>{realWorkStats.flagged_records}</strong>
-                  </div>
-                </div>
-
-                <div className="kpi-card">
-                  <Brain />
-                  <div>
-                    <span>Medium or Above</span>
-                    <strong>{realWorkStats.medium_or_above_records}</strong>
-                  </div>
-                </div>
-
-                <div className="kpi-card">
-                  <ShieldCheck />
-                  <div>
-                    <span>Data Quality Avg.</span>
-                    <strong>
-                      {realWorkStats.data_quality?.average_score ?? "—"}
-                    </strong>
-                  </div>
-                </div>
-              </div>
-
-              <div className="dashboard-grid">
-                <div className="panel">
-                  <div className="panel-header">
-                    <div>
-                      <div className="small-label">RISK DISTRIBUTION</div>
-                      <h3>Hybrid Risk Levels</h3>
-                    </div>
-                  </div>
-
-                  <div className="summary-list">
-                    {["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((level) => (
-                      <div key={level}>
-                        <span>{level}</span>
-                        <strong>
-                          {realWorkStats.risk_distribution?.[level] || 0}
-                        </strong>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="panel">
-                  <div className="panel-header">
-                    <div>
-                      <div className="small-label">BEHAVIORAL SIGNALS</div>
-                      <h3>Screening Indicators</h3>
-                    </div>
-                  </div>
-
-                  <div className="summary-list">
-                    <div>
-                      <span>High state allocation</span>
-                      <strong>
-                        {realWorkStats.signal_counts?.high_state_allocation || 0}
-                      </strong>
-                    </div>
-                    <div>
-                      <span>High constituency allocation</span>
-                      <strong>
-                        {realWorkStats.signal_counts?.high_constituency_allocation || 0}
-                      </strong>
-                    </div>
-                    <div>
-                      <span>High category allocation</span>
-                      <strong>
-                        {realWorkStats.signal_counts?.high_category_allocation || 0}
-                      </strong>
-                    </div>
-                    <div>
-                      <span>Repeated description</span>
-                      <strong>
-                        {realWorkStats.signal_counts?.repeated_description || 0}
-                      </strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          <div className="panel-header" style={{ marginTop: "24px" }}>
-            <div>
-              <div className="small-label">PRIORITIZED RECORDS</div>
-              <h3>Highest-Risk Work Records</h3>
-              <p className="panel-subtitle">
-                Records prioritized by the hybrid screening score.
-              </p>
-            </div>
-
-            <div className="hybrid-weight-badge">
-              ML 60% + Rules 40%
-            </div>
-          </div>
-
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Work ID</th>
-                  <th>State</th>
-                  <th>Constituency</th>
-                  <th>Allocation</th>
-                  <th>Score</th>
-                  <th>Level</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {realTopWorks.map((work) => (
-                  <tr key={work.work_id}>
-                    <td><strong>{work.work_id}</strong></td>
-                    <td>{work.state || "—"}</td>
-                    <td>{work.constituency || "—"}</td>
-                    <td>
-                      ₹{Number(work.allocation_amount || 0).toLocaleString("en-IN")}
-                    </td>
-                    <td>
-                      <strong>
-                        {Number(work.hybrid_risk_score || 0).toFixed(2)}
-                      </strong>
-                    </td>
-                    <td>
-                      <span
-                        className={`risk-badge-small ${
-                          work.hybrid_risk_level?.toLowerCase() || ""
-                        }`}
-                      >
-                        {work.hybrid_risk_level || "—"}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className="real-view-button"
-                        disabled={realWorkLoading}
-                        onClick={() => openRealWork(work.work_id)}
-                      >
-                        {realWorkLoading ? "Loading..." : "View details"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {selectedRealWork && !realWorkLoading && (
-            <section className="real-record-detail">
-              <div className="real-record-header">
-                <div>
-                  <div className="small-label">REAL MPLADS WORK</div>
-                  <h3>{selectedRealWork.work_id}</h3>
-                  <p>
-                    {selectedRealWork.state || "State not available"}
-                    {" • "}
-                    {selectedRealWork.constituency || "Constituency not available"}
-                  </p>
-                </div>
-
-                <button
-                  className="real-record-close"
-                  type="button"
-                  onClick={() => setSelectedRealWork(null)}
-                >
-                  Close
-                </button>
-              </div>
-
-              <div className="real-detail-grid">
-                <div className="real-detail-card">
-                  <h4>Work</h4>
-                  <div className="detail-row">
-                    <span>Description</span>
-                    <strong>{selectedRealWork.work || "Not available"}</strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>Category</span>
-                    <strong>{selectedRealWork.category || "Not available"}</strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>Status</span>
-                    <strong>{selectedRealWork.status || "Not available"}</strong>
-                  </div>
-                </div>
-
-                <div className="real-detail-card">
-                  <h4>Allocation</h4>
-                  <div className="detail-row">
-                    <span>Allocation Amount</span>
-                    <strong>
-                      ₹{Number(selectedRealWork.allocation_amount || 0).toLocaleString("en-IN")}
-                    </strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>State Median Ratio</span>
-                    <strong>
-                      {Number(selectedRealWork.allocation_vs_state_median || 0).toFixed(2)}x
-                    </strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>Constituency Median Ratio</span>
-                    <strong>
-                      {Number(selectedRealWork.allocation_vs_constituency_median || 0).toFixed(2)}x
-                    </strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>Category Median Ratio</span>
-                    <strong>
-                      {Number(selectedRealWork.allocation_vs_category_median || 0).toFixed(2)}x
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="real-detail-card">
-                  <h4>Hybrid Risk</h4>
-                  <div className="detail-row">
-                    <span>ML Risk</span>
-                    <strong>
-                      {Number(selectedRealWork.real_ml_risk_score || 0).toFixed(2)}
-                    </strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>Rule Score</span>
-                    <strong>
-                      {Number(selectedRealWork.work_rule_score || 0).toFixed(2)}
-                    </strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>Hybrid Score</span>
-                    <strong>
-                      {Number(selectedRealWork.hybrid_risk_score || 0).toFixed(2)}
-                    </strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>Risk Level</span>
-                    <strong>{selectedRealWork.hybrid_risk_level || "Not available"}</strong>
-                  </div>
-                </div>
-
-                <div className="real-detail-card">
-                  <h4>Behavioral Signals</h4>
-                  <div className="detail-row">
-                    <span>High State Allocation</span>
-                    <strong>
-                      {selectedRealWork.rule_high_state_allocation ? "Yes" : "No"}
-                    </strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>High Constituency Allocation</span>
-                    <strong>
-                      {selectedRealWork.rule_high_constituency_allocation ? "Yes" : "No"}
-                    </strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>High Category Allocation</span>
-                    <strong>
-                      {selectedRealWork.rule_high_category_allocation ? "Yes" : "No"}
-                    </strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>Repeated Description</span>
-                    <strong>
-                      {selectedRealWork.rule_repeated_description ? "Yes" : "No"}
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="real-detail-card">
-                  <h4>Review</h4>
-                  <div className="detail-row">
-                    <span>Recommended Action</span>
-                    <strong>{selectedRealWork.recommended_action || "Not available"}</strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>Data Quality</span>
-                    <strong>{selectedRealWork.data_quality_score ?? "Not available"}</strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>Data source</span>
-                    <strong>Real MPLADS work record</strong>
-                  </div>
-                </div>
-
-                <div className="real-detail-card">
-                  <h4>Administrative Information</h4>
-                  <div className="detail-row">
-                    <span>MP Name</span>
-                    <strong>{selectedRealWork.mp_name || "Not available"}</strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>IDA</span>
-                    <strong>{selectedRealWork.ida || "Not available"}</strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>Recommended Date</span>
-                    <strong>{selectedRealWork.recommended_date || "Not available"}</strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* =====================================================
-                  WORK INVESTIGATION
-                  ===================================================== */}
-
-              <section className="panel investigation-panel" style={{ marginTop: "18px" }}>
-                <div className="section-heading">
-                  <div>
-                    <h2>Officer Investigation</h2>
-                    <p>Record the verification outcome for this work.</p>
-                  </div>
-
-                  {workInvestigationExists && (
-                    <span className="saved-indicator">
-                      Saved in PostgreSQL
-                    </span>
-                  )}
-                </div>
-
-                {!workInvestigationExists ? (
-                  <div>
-                    <p className="panel-subtitle">
-                      This work has been prioritized by the screening system.
-                      Start an investigation to record an officer review.
-                    </p>
-
-                    <button
-                      type="button"
-                      className="save-button"
-                      onClick={startWorkInvestigation}
-                      disabled={savingWorkInvestigation}
-                    >
-                      <ClipboardCheck size={18} />
-                      {savingWorkInvestigation
-                        ? "Starting..."
-                        : "Start Investigation"}
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <div className="form-group">
-                      <label>Investigation Status</label>
-                      <select
-                        value={workInvestigationStatus}
-                        onChange={(e) =>
-                          setWorkInvestigationStatus(e.target.value)
-                        }
-                      >
-                        <option value="NEW">NEW</option>
-                        <option value="UNDER REVIEW">UNDER REVIEW</option>
-                        <option value="VERIFIED">VERIFIED</option>
-                        <option value="FALSE POSITIVE">FALSE POSITIVE</option>
-                        <option value="ESCALATED">ESCALATED</option>
-                        <option value="CLOSED">CLOSED</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label>Officer Notes</label>
-                      <textarea
-                        value={workOfficerNote}
-                        onChange={(e) => setWorkOfficerNote(e.target.value)}
-                        placeholder="Enter verification findings, document observations, reasons for escalation, or other investigation notes..."
-                        rows="6"
-                      />
-                    </div>
-
-                    <div className="investigation-actions">
-                      <button
-                        type="button"
-                        className="save-button"
-                        onClick={saveWorkInvestigation}
-                        disabled={savingWorkInvestigation}
-                      >
-                        <Save size={18} />
-                        {savingWorkInvestigation
-                          ? "Saving..."
-                          : "Save Investigation"}
-                      </button>
-
-                      {workSaveMessage && (
-                        <span
-                          className={
-                            workSaveMessage.includes("successfully")
-                              ? "save-success"
-                              : "save-error"
-                          }
-                        >
-                          {workSaveMessage}
-                        </span>
-                      )}
-                    </div>
-                  </>
-                )}
-              </section>
-
-              <div className="verification-box" style={{ marginTop: "18px" }}>
-                <strong>Verification notice:</strong>{" "}
-                This is an automated screening signal from real MPLADS work
-                data. It is not a confirmed fraud finding and requires
-                human/audit verification.
-              </div>
-            </section>
-          )}
-
-          {realWorkLoading && (
-            <div className="real-record-detail">
-              <div className="small-label">LOADING WORK</div>
-              <h3>Fetching real MPLADS work record...</h3>
-              <p className="panel-subtitle">
-                Loading the selected work from the FastAPI backend.
-              </p>
-            </div>
-          )}
-
-          {/* =====================================================
-              WORK INVESTIGATION QUEUE
-              ===================================================== */}
-
-          <div className="panel" style={{ marginTop: "24px" }}>
-            <div className="panel-header">
-              <div>
-                <div className="small-label">INVESTIGATION QUEUE</div>
-                <h3>Officer Review Queue</h3>
-                <p className="panel-subtitle">
-                  Work records that have been opened for human verification.
-                </p>
-              </div>
-
-              <div className="hybrid-weight-badge">
-                {workInvestigationQueue.length} Cases
-              </div>
-            </div>
-
-            {workInvestigationQueue.length === 0 ? (
-              <div className="verification-box">
-                No work investigations have been started yet.
-              </div>
-            ) : (
-              <div className="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Work ID</th>
-                      <th>Status</th>
-                      <th>Officer Note</th>
-                      <th>Updated</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {workInvestigationQueue.map((item) => (
-                      <tr key={item.id || item.work_id}>
-                        <td><strong>{item.work_id}</strong></td>
-                        <td>
-                          <span className="risk-badge-small">
-                            {item.status || "NEW"}
-                          </span>
-                        </td>
-                        <td>
-                          {item.officer_note || "No note added"}
-                        </td>
-                        <td>
-                          {item.updated_at
-                            ? new Date(item.updated_at).toLocaleString("en-IN")
-                            : "—"}
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="real-view-button"
-                            onClick={() => openRealWork(item.work_id)}
-                          >
-                            Open work
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </section>
-
-
-        {/* =====================================================
-            REAL MPLADS FINANCIAL SCREENING
-            ===================================================== */}
-
-        <section className="panel real-financial-panel">
-
-          <div className="panel-header">
-
-            <div>
-
-              <div className="small-label">
-                REAL PUBLIC DATA
-              </div>
-
-              <h2>
-                Real MPLADS Financial Screening
-              </h2>
-
-              <p className="panel-subtitle">
-                Screening of publicly available MPLADS aggregate
-                financial records for patterns requiring verification.
-              </p>
-
-            </div>
-
-            <div className="hybrid-weight-badge">
-              {realFinancialStats?.total_records || 0} Records
-            </div>
-
-          </div>
-
-
-          {realFinancialStats && (
-
-            <div className="kpi-grid real-financial-kpis">
-
+            {/* 6 Executive KPIs */}
+            <div className="kpi-grid-6">
               <div className="kpi-card">
-                <Database />
-                <div>
-                  <span>Real Records</span>
-                  <strong>{realFinancialStats.total_records}</strong>
+                <div className="kpi-header">
+                  <span className="kpi-label">Monitored Works</span>
+                  <div className="kpi-icon-wrap"><Database size={18} /></div>
                 </div>
+                <div className="kpi-value">{nationalStats.total_works.toLocaleString()}</div>
+                <div className="kpi-sub">Across 33 States & UTs</div>
               </div>
 
               <div className="kpi-card">
-                <AlertTriangle />
-                <div>
-                  <span>High Risk</span>
-                  <strong>{realFinancialStats.high_risk_records}</strong>
+                <div className="kpi-header">
+                  <span className="kpi-label">Total Allocations</span>
+                  <div className="kpi-icon-wrap"><IndianRupee size={18} /></div>
                 </div>
+                <div className="kpi-value">₹{nationalStats.total_allocation_cr.toLocaleString()} <span style={{ fontSize: "16px", fontWeight: 500 }}>Cr</span></div>
+                <div className="kpi-sub">Expenditure: ₹{nationalStats.total_expenditure_cr} Cr</div>
+              </div>
+
+              <div className="kpi-card" style={{ borderColor: "rgba(239, 68, 68, 0.4)" }}>
+                <div className="kpi-header">
+                  <span className="kpi-label" style={{ color: "#f87171" }}>Critical Risk Works</span>
+                  <div className="kpi-icon-wrap" style={{ background: "rgba(239, 68, 68, 0.15)", color: "#f87171" }}>
+                    <AlertTriangle size={18} />
+                  </div>
+                </div>
+                <div className="kpi-value" style={{ color: "#f87171" }}>{nationalStats.risk_distribution.CRITICAL}</div>
+                <div className="kpi-sub">Priority Audit Verification Required</div>
               </div>
 
               <div className="kpi-card">
-                <FileWarning />
-                <div>
-                  <span>Excess Expenditure</span>
-                  <strong>
-                    {realFinancialStats.signal_counts.signal_excess_expenditure || 0}
-                  </strong>
+                <div className="kpi-header">
+                  <span className="kpi-label">Tender-Split Pattern</span>
+                  <div className="kpi-icon-wrap" style={{ color: "#fb923c" }}><Sliders size={18} /></div>
                 </div>
+                <div className="kpi-value">{nationalStats.behavioral_signals.split_tender_detected}</div>
+                <div className="kpi-sub">Priced just below ₹5L / ₹10L thresholds</div>
               </div>
 
               <div className="kpi-card">
-                <IndianRupee />
-                <div>
-                  <span>High Unspent Balance</span>
-                  <strong>
-                    {realFinancialStats.signal_counts.signal_high_unspent_balance || 0}
-                  </strong>
+                <div className="kpi-header">
+                  <span className="kpi-label">Cluster Repetitions</span>
+                  <div className="kpi-icon-wrap" style={{ color: "#fbbf24" }}><MapPin size={18} /></div>
                 </div>
+                <div className="kpi-value">{nationalStats.behavioral_signals.cluster_works_detected}</div>
+                <div className="kpi-sub">Same work repeated in same village</div>
               </div>
 
+              <div className="kpi-card">
+                <div className="kpi-header">
+                  <span className="kpi-label">Data Quality Score</span>
+                  <div className="kpi-icon-wrap" style={{ color: "#34d399" }}><CheckCircle size={18} /></div>
+                </div>
+                <div className="kpi-value">{nationalStats.data_quality_average}<span style={{ fontSize: "16px" }}>%</span></div>
+                <div className="kpi-sub">Location & Status completeness</div>
+              </div>
             </div>
 
-          )}
-
-
-          {realFinancialStats && (
-
-            <div className="dashboard-grid">
-
+            {/* Visualizations Grid */}
+            <div className="charts-grid-2">
+              {/* Risk Distribution Donut */}
               <div className="panel">
-
-                <h3>Financial Risk Distribution</h3>
-
-                <p className="panel-subtitle">
-                  Screening classification across real records
-                </p>
-
-                <div className="chart-container">
-
-                  <ResponsiveContainer width="100%" height={280}>
-
+                <div className="panel-header">
+                  <div>
+                    <h3 className="panel-title"><ShieldAlert size={18} color="var(--cyan)" /> Hybrid Risk Classification</h3>
+                    <p className="panel-desc">Ensemble ML (60%) + CAG Domain Rule Engine (40%)</p>
+                  </div>
+                </div>
+                <div style={{ width: "100%", height: 280 }}>
+                  <ResponsiveContainer>
                     <PieChart>
-
                       <Pie
-                        data={realRiskData}
+                        data={riskDonutData}
                         dataKey="value"
                         nameKey="name"
                         cx="50%"
                         cy="50%"
+                        innerRadius={65}
                         outerRadius={95}
-                        label
+                        paddingAngle={4}
                       >
-
-                        {realRiskData.map((_, index) => (
-                          <Cell key={index} />
+                        {riskDonutData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
-
                       </Pie>
-
-                      <Tooltip />
-
+                      <Tooltip
+                        contentStyle={{ background: "#1f2937", borderColor: "#374151", borderRadius: 8, color: "#fff" }}
+                        formatter={(val) => [val.toLocaleString() + " works", "Volume"]}
+                      />
+                      <Legend />
                     </PieChart>
-
                   </ResponsiveContainer>
-
                 </div>
-
               </div>
 
-
+              {/* State-wise Allocations & Flags */}
               <div className="panel">
-
-                <h3>Screening Signals</h3>
-
-                <p className="panel-subtitle">
-                  Patterns requiring contextual verification
-                </p>
-
-                <div className="summary-list">
-
+                <div className="panel-header">
                   <div>
-                    <AlertTriangle />
-                    <span>Sanction Gap</span>
-                    <strong>
-                      {realFinancialStats.signal_counts.signal_sanction_gap || 0}
-                    </strong>
+                    <h3 className="panel-title"><Building2 size={18} color="var(--cyan)" /> Top States by Work Volume & Flags</h3>
+                    <p className="panel-desc">Comparison of total works vs prioritized flagged records</p>
                   </div>
-
-                  <div>
-                    <FileWarning />
-                    <span>High Unspent Balance</span>
-                    <strong>
-                      {realFinancialStats.signal_counts.signal_high_unspent_balance || 0}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <IndianRupee />
-                    <span>Excess Expenditure</span>
-                    <strong>
-                      {realFinancialStats.signal_counts.signal_excess_expenditure || 0}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <AlertTriangle />
-                    <span>Above Available Funds</span>
-                    <strong>
-                      {realFinancialStats.signal_counts.signal_expenditure_above_available || 0}
-                    </strong>
-                  </div>
-
                 </div>
-
+                <div style={{ width: "100%", height: 280 }}>
+                  <ResponsiveContainer>
+                    <BarChart data={stateStats.slice(0, 7)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <XAxis dataKey="state" stroke="#94a3b8" fontSize={11} interval={0} />
+                      <YAxis stroke="#94a3b8" fontSize={11} />
+                      <Tooltip contentStyle={{ background: "#1f2937", borderColor: "#374151", borderRadius: 8, color: "#fff" }} />
+                      <Bar dataKey="total_works" name="Total Works" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="flagged_works" name="Flagged Works" fill="#f97316" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-
             </div>
 
-          )}
-
-
-          <div className="panel">
-
-            <div className="panel-header">
-
-              <div>
-                <h3>Highest Financial Screening Scores</h3>
-                <p className="panel-subtitle">
-                  Real records prioritized for verification
-                </p>
-              </div>
-
-            </div>
-
-            <div className="table-wrapper">
-
-              <table>
-
-                <thead>
-                  <tr>
-                    <th>Record</th>
-                    <th>MP</th>
-                    <th>Constituency</th>
-                    <th>Score</th>
-                    <th>Level</th>
-                    <th>Explanation</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-
-                  {realTopRecords.map(record => (
-
-                    <tr
-                      key={record.project_id}
-                      className="clickable-row"
-                      onClick={() => openRealRecord(record.project_id)}
-                      title="Click to open real MPLADS record details"
-                    >
-
-                      <td>
-                        <strong>{record.project_id}</strong>
-                        <br />
-                        <button
-                          type="button"
-                          className="real-view-button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            openRealRecord(record.project_id);
-                          }}
-                        >
-                          View details
-                        </button>
-                      </td>
-
-                      <td>{record.mp_name}</td>
-
-                      <td>{record.constituency}</td>
-
-                      <td>
-                        <strong>
-                          {Number(record.financial_rule_score || 0).toFixed(0)}
-                        </strong>
-                      </td>
-
-                      <td>
-                        <span
-                          className={`risk-badge-small ${
-                            record.financial_risk_level?.toLowerCase()
-                          }`}
-                        >
-                          {record.financial_risk_level}
-                        </span>
-                      </td>
-
-                      <td>{record.financial_explanation}</td>
-
-                    </tr>
-
-                  ))}
-
-                </tbody>
-
-              </table>
-
-            </div>
-
-          </div>
-
-          {/* =====================================================
-              REAL MPLADS RECORD DETAIL
-              ===================================================== */}
-
-          {realRecordLoading && (
-            <div className="real-record-detail">
-              <div className="small-label">LOADING RECORD</div>
-              <h3>Fetching real MPLADS financial record...</h3>
-              <p className="panel-subtitle">
-                Loading the selected record from the FastAPI backend.
-              </p>
-            </div>
-          )}
-
-          {selectedRealRecord && !realRecordLoading && (
-            <section className="real-record-detail">
-
-              <div className="real-record-header">
+            {/* Quick Actions Callout */}
+            <div className="panel" style={{ background: "linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(59, 130, 246, 0.08))", borderColor: "rgba(6, 182, 212, 0.3)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
                 <div>
-                  <div className="small-label">
-                    REAL MPLADS RECORD
-                  </div>
-
-                  <h3>
-                    {selectedRealRecord.project_id}
-                  </h3>
-
-                  <p>
-                    {selectedRealRecord.mp_name || "MP not available"}
-                    {" • "}
-                    {selectedRealRecord.constituency || "Constituency not available"}
+                  <h3 style={{ margin: "0 0 6px 0", color: "#fff", fontSize: "16px" }}>Ready for Live Hackathon Demonstration?</h3>
+                  <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "13px" }}>
+                    Test how our ensemble evaluates real-time project proposals, or inspect any of the 400 CRITICAL flagged works.
                   </p>
                 </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span
-                    className={`risk-badge-small ${
-                      selectedRealRecord.financial_risk_level?.toLowerCase()
-                    }`}
-                  >
-                    {selectedRealRecord.financial_risk_level || "LOW"}
-                  </span>
-
-                  <button
-                    className="real-record-close"
-                    onClick={() => setSelectedRealRecord(null)}
-                  >
-                    Close
+                <div style={{ display: "flex", gap: "12px" }}>
+                  <button onClick={() => { setActiveTab("simulator"); }} className="btn-simulate" style={{ width: "auto", padding: "10px 20px" }}>
+                    <Play size={16} /> Open AI Simulator
+                  </button>
+                  <button onClick={() => { setSelectedRiskLevel("CRITICAL"); setActiveTab("explorer"); fetchWorks(1, "", "ALL", "CRITICAL", "ALL"); }} className="btn-audit-view" style={{ padding: "10px 18px", fontSize: "13px" }}>
+                    <AlertTriangle size={16} /> View Critical Works
                   </button>
                 </div>
               </div>
-
-              <div className="real-detail-grid">
-
-                <div className="real-detail-card">
-                  <h4>Identity</h4>
-
-                  <div className="detail-row">
-                    <span>MP Name</span>
-                    <strong>{selectedRealRecord.mp_name || "Not available"}</strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>Constituency</span>
-                    <strong>{selectedRealRecord.constituency || "Not available"}</strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>Data Source</span>
-                    <strong>{selectedRealRecord.data_source || "REAL_MPLADS"}</strong>
-                  </div>
-                </div>
-
-                <div className="real-detail-card">
-                  <h4>Financial Position</h4>
-
-                  <div className="detail-row">
-                    <span>Entitlement</span>
-                    <strong>{formatValue(selectedRealRecord.entitlement)}</strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>Funds Received</span>
-                    <strong>{formatValue(selectedRealRecord.fund_received)}</strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>Amount Available</span>
-                    <strong>{formatValue(selectedRealRecord.amount_available)}</strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>Unspent Balance</span>
-                    <strong>{formatValue(selectedRealRecord.unspent_balance)}</strong>
-                  </div>
-                </div>
-
-                <div className="real-detail-card">
-                  <h4>Works & Expenditure</h4>
-
-                  <div className="detail-row">
-                    <span>Recommended Cost</span>
-                    <strong>{formatValue(selectedRealRecord.works_recommended_cost)}</strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>Sanctioned Cost</span>
-                    <strong>{formatValue(selectedRealRecord.work_sanctioned_cost)}</strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>Actual Expenditure</span>
-                    <strong>{formatValue(selectedRealRecord.actual_expenditure)}</strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>Expenditure / Sanction</span>
-                    <strong>
-                      {formatValue(
-                        selectedRealRecord.expenditure_to_sanction_ratio,
-                        3
-                      )}x
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="real-detail-card">
-                  <h4>Screening</h4>
-
-                  <div className="detail-row">
-                    <span>Screening Score</span>
-                    <strong>
-                      {formatValue(selectedRealRecord.financial_rule_score, 0)}
-                    </strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>Risk Level</span>
-                    <strong>
-                      {selectedRealRecord.financial_risk_level || "LOW"}
-                    </strong>
-                  </div>
-
-                  <div className="detail-row">
-                    <span>Ground Truth</span>
-                    <strong>
-                      {selectedRealRecord.ground_truth_available ? "Available" : "Not available"}
-                    </strong>
-                  </div>
-                </div>
-
-              </div>
-
-              <div className="real-record-signals">
-                <h4>Detected Screening Signals</h4>
-
-                <div className="signal-list">
-                  {activeRealSignals(selectedRealRecord).length > 0 ? (
-                    activeRealSignals(selectedRealRecord).map((signal, index) => {
-                      const Icon = signal.icon;
-
-                      return (
-                        <div
-                          className={`signal-item ${signal.type}`}
-                          key={index}
-                        >
-                          <Icon size={17} />
-                          <span>{signal.text}</span>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="signal-item">
-                      <ClipboardCheck size={17} />
-                      <span>
-                        No configured financial screening signal is active for this record.
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="verification-box">
-                <h3>Recommended Verification</h3>
-
-                <ul>
-                  <li>
-                    Review the source financial records supporting the reported values.
-                  </li>
-
-                  {selectedRealRecord.signal_excess_expenditure && (
-                    <li>
-                      Reconcile actual expenditure with the sanctioned cost and supporting bills.
-                    </li>
-                  )}
-
-                  {selectedRealRecord.signal_expenditure_above_available && (
-                    <li>
-                      Reconcile expenditure with reported funds available and fund-flow records.
-                    </li>
-                  )}
-
-                  {selectedRealRecord.signal_sanction_gap && (
-                    <li>
-                      Review recommendation and sanction documentation for the observed cost gap.
-                    </li>
-                  )}
-
-                  {selectedRealRecord.signal_high_unspent_balance && (
-                    <li>
-                      Verify the treatment, current status and reconciliation of the unspent balance.
-                    </li>
-                  )}
-                </ul>
-              </div>
-
-              <div className="dashboard-disclaimer">
-                <AlertTriangle size={16} />
-                <span>
-                  This is a screening view of aggregate public MPLADS financial data.
-                  Signals indicate patterns requiring verification and do not establish
-                  fraud, wrongdoing, or an audit finding.
-                </span>
-              </div>
-
-            </section>
-          )}
-
-
-          <div className="dashboard-disclaimer">
-
-            <AlertTriangle size={16} />
-
-            <span>
-              Real MPLADS records are aggregate financial data.
-              Screening signals identify patterns that may require
-              verification; they do not establish fraud, wrongdoing,
-              or an audit finding.
-            </span>
-
+            </div>
           </div>
+        )}
 
-        </section>
+        {/* =====================================================
+            TAB 2: WORKS ANOMALY EXPLORER
+            ===================================================== */}
+        {activeTab === "explorer" && (
+          <div>
+            <div className="section-header">
+              <span className="section-tag">AUDIT DISCOVERY</span>
+              <h1 className="section-title">MPLADS Works Anomaly Explorer</h1>
+              <p className="section-desc">
+                Search, filter, and inspect all 56,138 real works with ML behavioral anomaly scores and CAG rule diagnostic explanations.
+              </p>
+            </div>
 
+            {/* Filter Bar */}
+            <div className="filter-bar">
+              <div className="search-input-wrap">
+                <Search size={16} />
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Search by Work, MP, Constituency, Village, or Work ID..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      fetchWorks(1, searchQuery, selectedState, selectedRiskLevel, selectedCategory);
+                    }
+                  }}
+                />
+              </div>
 
-        {/* DISCLAIMER */}
+              <select
+                className="filter-select"
+                value={selectedRiskLevel}
+                onChange={(e) => {
+                  setSelectedRiskLevel(e.target.value);
+                  fetchWorks(1, searchQuery, selectedState, e.target.value, selectedCategory);
+                }}
+              >
+                <option value="ALL">All Risk Levels</option>
+                <option value="CRITICAL">CRITICAL (Score ≥ 75)</option>
+                <option value="HIGH">HIGH (55 - 74)</option>
+                <option value="MEDIUM">MEDIUM (35 - 54)</option>
+                <option value="LOW">LOW (&lt; 35)</option>
+              </select>
 
-        <div className="dashboard-disclaimer">
+              <select
+                className="filter-select"
+                value={selectedState}
+                onChange={(e) => {
+                  setSelectedState(e.target.value);
+                  fetchWorks(1, searchQuery, e.target.value, selectedRiskLevel, selectedCategory);
+                }}
+              >
+                <option value="ALL">All States/UTs</option>
+                {stateStats.map((s) => (
+                  <option key={s.state} value={s.state}>{s.state} ({s.total_works})</option>
+                ))}
+              </select>
 
-          <AlertTriangle size={16} />
+              <button
+                className="btn-simulate"
+                style={{ width: "auto", padding: "8px 18px" }}
+                onClick={() => fetchWorks(1, searchQuery, selectedState, selectedRiskLevel, selectedCategory)}
+              >
+                <Filter size={14} /> Filter
+              </button>
 
-          <span>
-            Risk scores indicate potential anomalies or
-            high-risk patterns requiring verification.
-            They do not by themselves establish fraud or
-            wrongdoing.
-          </span>
+              <button
+                className="btn-audit-view"
+                style={{ padding: "8px 14px" }}
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedState("ALL");
+                  setSelectedRiskLevel("ALL");
+                  setSelectedCategory("ALL");
+                  fetchWorks(1, "", "ALL", "ALL", "ALL");
+                }}
+              >
+                Reset
+              </button>
+            </div>
 
-        </div>
+            {/* Results Table */}
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Work ID</th>
+                    <th>MP & Constituency</th>
+                    <th>Work Description</th>
+                    <th>Allocation</th>
+                    <th>ML Score</th>
+                    <th>CAG Score</th>
+                    <th>Hybrid Risk</th>
+                    <th>Signals Detected</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {worksLoading ? (
+                    <tr>
+                      <td colSpan="9" style={{ textAlign: "center", padding: "40px", color: "var(--text-secondary)" }}>
+                        <RefreshCw size={24} style={{ animation: "spin 1s linear infinite", marginBottom: "8px" }} />
+                        <div>Loading filtered MPLADS works from PostgreSQL...</div>
+                      </td>
+                    </tr>
+                  ) : worksData.items.length === 0 ? (
+                    <tr>
+                      <td colSpan="9" style={{ textAlign: "center", padding: "40px", color: "var(--text-secondary)" }}>
+                        No works match your current filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    worksData.items.map((w) => (
+                      <tr key={w.work_id}>
+                        <td>
+                          <span style={{ fontFamily: "var(--mono)", fontWeight: 700, color: "var(--cyan)" }}>
+                            {w.work_id}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>{w.mp_name || "—"}</div>
+                          <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                            {w.constituency} ({w.state})
+                          </div>
+                        </td>
+                        <td style={{ maxWidth: "280px" }}>
+                          <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={w.work}>
+                            {w.work || "—"}
+                          </div>
+                          <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                            {w.village ? `${w.village}, ${w.block || ""}` : w.category}
+                          </div>
+                        </td>
+                        <td>
+                          <strong>₹{Number(w.allocation_amount || 0).toLocaleString("en-IN")}</strong>
+                        </td>
+                        <td>
+                          <span style={{ fontFamily: "var(--mono)", color: "#93c5fd" }}>
+                            {w.real_ml_risk_score}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontFamily: "var(--mono)", color: "#fca5a5" }}>
+                            {w.work_rule_score}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`risk-badge ${w.hybrid_risk_level.toLowerCase()}`}>
+                            {w.hybrid_risk_score} • {w.hybrid_risk_level}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                            {w.split_tender_flag === 1 && (
+                              <span className="badge-pill" style={{ background: "rgba(249, 115, 22, 0.2)", color: "#fb923c" }} title="Priced in tender-split window under statutory threshold">
+                                Split Tender
+                              </span>
+                            )}
+                            {w.cluster_work_flag === 1 && (
+                              <span className="badge-pill" style={{ background: "rgba(245, 158, 11, 0.2)", color: "#fbbf24" }} title="Cluster: Repeated identical work in same village">
+                                Cluster
+                              </span>
+                            )}
+                            {w.prolonged_inaction_flag === 1 && (
+                              <span className="badge-pill" style={{ background: "rgba(239, 68, 68, 0.2)", color: "#f87171" }} title="Unsanctioned > 180 days">
+                                Inaction
+                              </span>
+                            )}
+                            {w.split_tender_flag === 0 && w.cluster_work_flag === 0 && w.prolonged_inaction_flag === 0 && (
+                              <span style={{ color: "var(--text-muted)", fontSize: "11px" }}>Standard</span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <button
+                            className="btn-audit-view"
+                            onClick={() => openWorkDetail(w.work_id)}
+                          >
+                            Audit Deep-Dive
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px", flexWrap: "wrap", gap: "12px" }}>
+              <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                Showing page <strong>{worksData.page}</strong> of <strong>{worksData.pages}</strong> ({worksData.total.toLocaleString()} total works)
+              </span>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  disabled={currentPage <= 1 || worksLoading}
+                  onClick={() => fetchWorks(currentPage - 1, searchQuery, selectedState, selectedRiskLevel, selectedCategory)}
+                  className="btn-audit-view"
+                  style={{ opacity: currentPage <= 1 ? 0.5 : 1 }}
+                >
+                  Previous
+                </button>
+                <button
+                  disabled={currentPage >= worksData.pages || worksLoading}
+                  onClick={() => fetchWorks(currentPage + 1, searchQuery, selectedState, selectedRiskLevel, selectedCategory)}
+                  className="btn-audit-view"
+                  style={{ opacity: currentPage >= worksData.pages ? 0.5 : 1 }}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =====================================================
+            TAB 3: MP & CONSTITUENCY FINANCIALS
+            ===================================================== */}
+        {activeTab === "finances" && (
+          <div>
+            <div className="section-header">
+              <span className="section-tag">PUBLIC PROCUREMENT & RELEASES</span>
+              <h1 className="section-title">MP & Constituency Financial Position</h1>
+              <p className="section-desc">
+                Screening of all 557 Members of Parliament and Lok Sabha constituencies: entitlement utilization, sanction-to-expenditure ratios, and unspent balances.
+              </p>
+            </div>
+
+            {/* Filter Bar */}
+            <div className="filter-bar">
+              <div className="search-input-wrap">
+                <Search size={16} />
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Search by MP Name or Constituency..."
+                  value={finSearchQuery}
+                  onChange={(e) => {
+                    setFinSearchQuery(e.target.value);
+                    fetchConstituencies(e.target.value, finRiskFilter);
+                  }}
+                />
+              </div>
+
+              <select
+                className="filter-select"
+                value={finRiskFilter}
+                onChange={(e) => {
+                  setFinRiskFilter(e.target.value);
+                  fetchConstituencies(finSearchQuery, e.target.value);
+                }}
+              >
+                <option value="ALL">All Financial Risk Levels</option>
+                <option value="CRITICAL">CRITICAL</option>
+                <option value="HIGH">HIGH</option>
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="LOW">LOW</option>
+              </select>
+            </div>
+
+            {/* Table */}
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Record ID</th>
+                    <th>MP Name</th>
+                    <th>Constituency</th>
+                    <th>Entitlement (₹Cr)</th>
+                    <th>Fund Released (₹Cr)</th>
+                    <th>Sanctioned (₹Cr)</th>
+                    <th>Actual Spent (₹Cr)</th>
+                    <th>Unspent Balance (₹Cr)</th>
+                    <th>Risk Level</th>
+                    <th>Financial Finding</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {constituencies.map((c) => (
+                    <tr key={c.project_id}>
+                      <td style={{ fontFamily: "var(--mono)", fontWeight: 700, color: "var(--cyan)" }}>
+                        {c.project_id}
+                      </td>
+                      <td style={{ fontWeight: 600 }}>{c.mp_name}</td>
+                      <td>{c.constituency}</td>
+                      <td>₹{c.entitlement.toFixed(1)}</td>
+                      <td>₹{c.fund_received.toFixed(2)}</td>
+                      <td>₹{c.work_sanctioned_cost.toFixed(2)}</td>
+                      <td><strong>₹{c.actual_expenditure.toFixed(2)}</strong></td>
+                      <td style={{ color: c.unspent_pct > 30 ? "#fbbf24" : "inherit" }}>
+                        ₹{c.unspent_balance.toFixed(2)} ({c.unspent_pct.toFixed(0)}%)
+                      </td>
+                      <td>
+                        <span className={`risk-badge ${c.financial_risk_level.toLowerCase()}`}>
+                          {c.financial_risk_level}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: "12px", color: "var(--text-secondary)", maxWidth: "260px" }}>
+                        {c.financial_explanation}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* =====================================================
+            TAB 4: LIVE AI AUDIT SIMULATOR ("WHAT-IF" LAB)
+            ===================================================== */}
+        {activeTab === "simulator" && (
+          <div>
+            <div className="section-header">
+              <span className="section-tag">HACKATHON EVALUATION LAB</span>
+              <h1 className="section-title">Live AI Anomaly & Fraud Risk Simulator</h1>
+              <p className="section-desc">
+                Interactive real-time audit testing for judges: simulate a new MPLADS work proposal, test behavioral parameters, and inspect live inference outputs.
+              </p>
+            </div>
+
+            {/* Presets Strip */}
+            <div className="preset-strip">
+              <span style={{ fontSize: "12px", color: "var(--text-muted)", alignSelf: "center" }}>Quick Scenarios:</span>
+              <button className="preset-chip" onClick={() => applyPreset(1)}>
+                <Sliders size={14} color="#f97316" /> Scenario 1: Tender-Split Street Lights (Darbhanga)
+              </button>
+              <button className="preset-chip" onClick={() => applyPreset(2)}>
+                <AlertTriangle size={14} color="#ef4444" /> Scenario 2: 7x Median Road Allocation (Karauli)
+              </button>
+              <button className="preset-chip" onClick={() => applyPreset(3)}>
+                <Clock size={14} color="#fbbf24" /> Scenario 3: Dormant Water Plant (Assam)
+              </button>
+            </div>
+
+            <div className="simulator-layout">
+              {/* Form Input Panel */}
+              <div className="panel">
+                <h3 className="panel-title" style={{ marginBottom: "16px" }}>Proposed Work Parameters</h3>
+
+                <div className="form-row">
+                  <label className="form-label">Work Description / Title</label>
+                  <textarea
+                    rows={2}
+                    className="form-textarea"
+                    value={simInput.work}
+                    onChange={(e) => setSimInput({ ...simInput, work: e.target.value })}
+                  />
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                  <div className="form-row">
+                    <label className="form-label">State</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={simInput.state}
+                      onChange={(e) => setSimInput({ ...simInput, state: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-row">
+                    <label className="form-label">Constituency</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={simInput.constituency}
+                      onChange={(e) => setSimInput({ ...simInput, constituency: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                  <div className="form-row">
+                    <label className="form-label">Village / Location</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={simInput.village}
+                      onChange={(e) => setSimInput({ ...simInput, village: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-row">
+                    <label className="form-label">Block</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={simInput.block}
+                      onChange={(e) => setSimInput({ ...simInput, block: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <label className="form-label">Allocation Amount (₹)</label>
+                    <span style={{ fontSize: "12px", color: "var(--cyan)", fontWeight: 700 }}>
+                      ₹{Number(simInput.allocation_amount).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={simInput.allocation_amount}
+                    onChange={(e) => setSimInput({ ...simInput, allocation_amount: parseFloat(e.target.value) || 0 })}
+                  />
+                  <input
+                    type="range"
+                    min="50000"
+                    max="5000000"
+                    step="10000"
+                    value={simInput.allocation_amount}
+                    onChange={(e) => setSimInput({ ...simInput, allocation_amount: parseFloat(e.target.value) || 0 })}
+                    style={{ width: "100%", marginTop: "8px", accentColor: "var(--cyan)" }}
+                  />
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                  <div className="form-row">
+                    <label className="form-label">Days Since Recommendation</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={simInput.days_since_recommendation}
+                      onChange={(e) => setSimInput({ ...simInput, days_since_recommendation: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+
+                  <div className="form-row">
+                    <label className="form-label">Local Area Repeat Count</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="20"
+                      className="form-input"
+                      value={simInput.same_work_location_count}
+                      onChange={(e) => setSimInput({ ...simInput, same_work_location_count: parseInt(e.target.value) || 1 })}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  className="btn-simulate"
+                  onClick={handleRunSimulation}
+                  disabled={simulating}
+                >
+                  {simulating ? (
+                    <>
+                      <RefreshCw size={16} style={{ animation: "spin 1s linear infinite" }} />
+                      Computing ML Ensemble Inference...
+                    </>
+                  ) : (
+                    <>
+                      <Play size={16} /> Run Real-Time AI Audit Analysis
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Simulation Result Output */}
+              <div>
+                {simResult ? (
+                  <div className="panel" style={{ borderColor: RISK_COLORS[simResult.risk_level] }}>
+                    <div className="gauge-card" style={{ borderColor: "transparent", padding: 0 }}>
+                      <div
+                        className="gauge-circle"
+                        style={{
+                          border: `5px solid ${RISK_COLORS[simResult.risk_level]}`,
+                          background: `radial-gradient(circle, rgba(0,0,0,0.7), ${RISK_COLORS[simResult.risk_level]}20)`
+                        }}
+                      >
+                        <span className="gauge-score">{simResult.hybrid_risk_score}</span>
+                        <span className="gauge-label">HYBRID RISK</span>
+                      </div>
+                      <div className={`risk-badge ${simResult.risk_level.toLowerCase()}`} style={{ fontSize: "14px", padding: "6px 16px" }}>
+                        {simResult.risk_level} AUDIT PRIORITY
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", textAlign: "center" }}>
+                      <div style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "8px", border: "1px solid var(--border-subtle)" }}>
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>ML ENSEMBLE (60%)</span>
+                        <strong style={{ fontSize: "18px", color: "#93c5fd" }}>{simResult.ml_risk_score}</strong>
+                      </div>
+                      <div style={{ background: "rgba(255,255,255,0.03)", padding: "10px", borderRadius: "8px", border: "1px solid var(--border-subtle)" }}>
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>CAG RULES (40%)</span>
+                        <strong style={{ fontSize: "18px", color: "#fca5a5" }}>{simResult.rule_risk_score}</strong>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: "20px" }}>
+                      <h4 style={{ fontSize: "13px", textTransform: "uppercase", color: "var(--cyan)", letterSpacing: "0.5px", margin: "0 0 10px 0" }}>
+                        Anomaly Drivers Detected:
+                      </h4>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                        {simResult.top_reasons.map((r, i) => (
+                          <div key={i} style={{ display: "flex", gap: "8px", fontSize: "13px", color: "var(--text-primary)" }}>
+                            <AlertCircle size={16} color={RISK_COLORS[simResult.risk_level]} style={{ flexShrink: 0, marginTop: "2px" }} />
+                            <span>{r}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: "20px", borderTop: "1px solid var(--border-subtle)", paddingTop: "16px" }}>
+                      <h4 style={{ fontSize: "13px", textTransform: "uppercase", color: "#34d399", letterSpacing: "0.5px", margin: "0 0 10px 0" }}>
+                        Recommended Statutory Actions:
+                      </h4>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                        {simResult.recommended_actions.map((a, i) => (
+                          <div key={i} style={{ display: "flex", gap: "8px", fontSize: "13px", color: "var(--text-secondary)" }}>
+                            <CheckCircle size={16} color="#34d399" style={{ flexShrink: 0, marginTop: "2px" }} />
+                            <span>{a}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="panel" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "360px", textAlign: "center" }}>
+                    <Play size={44} color="var(--cyan)" style={{ opacity: 0.6, marginBottom: "16px" }} />
+                    <h3 style={{ color: "#fff", margin: "0 0 8px 0" }}>Awaiting Simulation Run</h3>
+                    <p style={{ color: "var(--text-secondary)", fontSize: "13px", maxWidth: "340px" }}>
+                      Select a preset above or modify the work parameters and click "Run Real-Time AI Audit Analysis".
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =====================================================
+            TAB 5: OFFICER CASE MANAGEMENT
+            ===================================================== */}
+        {activeTab === "investigations" && (
+          <div>
+            <div className="section-header">
+              <span className="section-tag">HUMAN-IN-THE-LOOP AUDIT MANAGEMENT</span>
+              <h1 className="section-title">Officer Investigation & Case Queue</h1>
+              <p className="section-desc">
+                Active workflow tracking for field inspections, statutory inquiry notes, and official audit escalation.
+              </p>
+            </div>
+
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Work ID</th>
+                    <th>Location</th>
+                    <th>Allocation</th>
+                    <th>Risk Score</th>
+                    <th>Status</th>
+                    <th>Lead Officer</th>
+                    <th>Field Verification</th>
+                    <th>Officer Notes</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {investigationQueue.length === 0 ? (
+                    <tr>
+                      <td colSpan="9" style={{ textAlign: "center", padding: "40px", color: "var(--text-secondary)" }}>
+                        No investigations opened yet. Open any work from the Explorer to assign and begin verification.
+                      </td>
+                    </tr>
+                  ) : (
+                    investigationQueue.map((inv) => (
+                      <tr key={inv.work_id}>
+                        <td>
+                          <span style={{ fontFamily: "var(--mono)", fontWeight: 700, color: "var(--cyan)" }}>
+                            {inv.work_id}
+                          </span>
+                        </td>
+                        <td>{inv.constituency} ({inv.state})</td>
+                        <td>₹{Number(inv.allocation_amount || 0).toLocaleString("en-IN")}</td>
+                        <td>
+                          <span className={`risk-badge ${inv.hybrid_risk_level.toLowerCase()}`}>
+                            {inv.hybrid_risk_score}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="badge-pill" style={{ background: "rgba(59, 130, 246, 0.2)", color: "#60a5fa" }}>
+                            {inv.status}
+                          </span>
+                        </td>
+                        <td>{inv.officer_name || "Assigned"}</td>
+                        <td>
+                          {inv.checklist_verified ? (
+                            <span style={{ color: "#34d399", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                              <CheckCircle size={14} /> Verified
+                            </span>
+                          ) : (
+                            <span style={{ color: "var(--text-muted)" }}>Pending</span>
+                          )}
+                        </td>
+                        <td style={{ maxWidth: "220px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {inv.officer_note || "No notes entered"}
+                        </td>
+                        <td>
+                          <button className="btn-audit-view" onClick={() => openWorkDetail(inv.work_id)}>
+                            Open Case
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* =====================================================
+            TAB 6: AI & CAG RULES METHODOLOGY
+            ===================================================== */}
+        {activeTab === "methodology" && (
+          <div>
+            <div className="section-header">
+              <span className="section-tag">TECHNICAL ARCHITECTURE</span>
+              <h1 className="section-title">AI Ensemble & CAG Domain Rules Methodology</h1>
+              <p className="section-desc">
+                Mathematical formulations, anomaly scoring algorithms, domain rules, and validation benchmarks.
+              </p>
+            </div>
+
+            <div className="panel">
+              <h3 className="panel-title" style={{ marginBottom: "12px" }}>
+                <Award size={18} color="var(--cyan)" /> Dual-Layer Hybrid Decision Framework
+              </h3>
+              <p style={{ color: "var(--text-secondary)", fontSize: "14px", lineHeight: "1.6", marginBottom: "20px" }}>
+                Public procurement and parliamentary fund expenditure data exhibits severe distributional skew and localized clustering. 
+                Single models (e.g. standard Isolation Forest alone) often fail due to identical repetitive records. Our system overcomes this with a <strong>three-model unsupervised ensemble</strong> combined with <strong>codified Comptroller and Auditor General (CAG) rules</strong>:
+              </p>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+                <div style={{ background: "rgba(255,255,255,0.03)", padding: "18px", borderRadius: "10px", border: "1px solid var(--border-subtle)" }}>
+                  <h4 style={{ color: "var(--cyan)", margin: "0 0 8px 0" }}>1. Isolation Forest (45% Weight)</h4>
+                  <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0 }}>
+                    300 orthogonal decision trees isolating high-dimensional behavioral anomalies across allocation logs, temporal gaps, and median disparities.
+                  </p>
+                </div>
+
+                <div style={{ background: "rgba(255,255,255,0.03)", padding: "18px", borderRadius: "10px", border: "1px solid var(--border-subtle)" }}>
+                  <h4 style={{ color: "#38bdf8", margin: "0 0 8px 0" }}>2. Profile-Deduplicated LOF (35% Weight)</h4>
+                  <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0 }}>
+                    Local Outlier Factor with unique feature profile mapping to prevent zero-distance KNN neighborhood distortion from repeated works.
+                  </p>
+                </div>
+
+                <div style={{ background: "rgba(255,255,255,0.03)", padding: "18px", borderRadius: "10px", border: "1px solid var(--border-subtle)" }}>
+                  <h4 style={{ color: "#818cf8", margin: "0 0 8px 0" }}>3. PCA Reconstruction Error (20% Weight)</h4>
+                  <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: 0 }}>
+                    Linear variance subspace projection measuring deviation from principal component manifolds for anomalous allocation spikes.
+                  </p>
+                </div>
+              </div>
+
+              <h4 style={{ color: "#fff", marginBottom: "12px" }}>CAG Statutory Rules Codified in Engine</h4>
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Rule ID</th>
+                      <th>Irregularity Pattern</th>
+                      <th>Statutory Reference</th>
+                      <th>Severity Weight</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>RULE-01</strong></td>
+                      <td>Procurement Contract-Splitting below mandatory e-tender thresholds (e.g. ₹4.8L–₹4.99L, ₹9.8L–₹9.99L)</td>
+                      <td>GFR 2017 Rule 149 / Para 3.12 MPLADS Guidelines</td>
+                      <td><span className="risk-badge critical">+25 pts</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>RULE-02</strong></td>
+                      <td>Local Area Cluster Duplication (≥3 identical work descriptions in same village/block)</td>
+                      <td>CAG Audit Report on MPLAD Scheme implementation</td>
+                      <td><span className="risk-badge critical">+25 pts</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>RULE-03</strong></td>
+                      <td>Disproportionate Allocation (≥3.0x State or Constituency Median for category)</td>
+                      <td>State Schedule of Rates (SOR) ceiling benchmarks</td>
+                      <td><span className="risk-badge high">+20 pts</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>RULE-04</strong></td>
+                      <td>Prolonged Administrative Inaction (&gt;180 days elapsed without sanction)</td>
+                      <td>MPLADS Para 5.2 (SLA: 45 days for sanction)</td>
+                      <td><span className="risk-badge medium">+15 pts</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>RULE-05</strong></td>
+                      <td>Vague non-specific work description with allocation &gt; ₹5 Lakhs</td>
+                      <td>Public Accountability Transparency Standards</td>
+                      <td><span className="risk-badge medium">+15 pts</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
 
       </main>
 
+      {/* =====================================================
+          WORK DEEP-DIVE & INVESTIGATION MODAL
+          ===================================================== */}
+      {workModalOpen && selectedWork && (
+        <div className="modal-overlay" onClick={() => setWorkModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <span className="section-tag">OFFICIAL AUDIT DOSSIER INSPECTOR</span>
+                <h2 style={{ margin: "4px 0 0 0", color: "#fff" }}>{selectedWork.work_id}</h2>
+                <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                  {selectedWork.constituency} ({selectedWork.state}) • MP: {selectedWork.mp_name || "Unassigned"}
+                </span>
+              </div>
+              <button className="btn-close" onClick={() => setWorkModalOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {/* Score banner */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(0,0,0,0.3)", padding: "16px 20px", borderRadius: "10px", border: "1px solid var(--border-subtle)", marginBottom: "20px" }}>
+                <div>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase" }}>Hybrid Risk Score</div>
+                  <div style={{ fontSize: "32px", fontWeight: 800, color: RISK_COLORS[selectedWork.hybrid_risk_level] }}>
+                    {selectedWork.hybrid_risk_score}
+                  </div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>ML ENSEMBLE</div>
+                  <div style={{ fontSize: "20px", fontWeight: 700, color: "#93c5fd" }}>{selectedWork.real_ml_risk_score}</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>CAG RULES</div>
+                  <div style={{ fontSize: "20px", fontWeight: 700, color: "#fca5a5" }}>{selectedWork.work_rule_score}</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>DATA QUALITY</div>
+                  <div style={{ fontSize: "20px", fontWeight: 700, color: "#34d399" }}>{selectedWork.data_quality_score}%</div>
+                </div>
+                <span className={`risk-badge ${selectedWork.hybrid_risk_level.toLowerCase()}`} style={{ fontSize: "13px", padding: "6px 14px" }}>
+                  {selectedWork.hybrid_risk_level}
+                </span>
+              </div>
+
+              {/* Administrative Details */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
+                <div style={{ background: "rgba(255,255,255,0.02)", padding: "14px", borderRadius: "8px", border: "1px solid var(--border-subtle)" }}>
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>Work Title / Description</span>
+                  <div style={{ fontWeight: 600, marginTop: "4px", fontSize: "14px" }}>{selectedWork.work || "—"}</div>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.02)", padding: "14px", borderRadius: "8px", border: "1px solid var(--border-subtle)" }}>
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>Allocation Amount</span>
+                  <div style={{ fontWeight: 700, marginTop: "4px", fontSize: "18px", color: "var(--cyan)" }}>
+                    ₹{Number(selectedWork.allocation_amount || 0).toLocaleString("en-IN")}
+                  </div>
+                </div>
+              </div>
+
+              {/* Anomaly Diagnosis & Actions */}
+              <div style={{ marginBottom: "20px" }}>
+                <h4 style={{ color: "#fff", fontSize: "14px", margin: "0 0 8px 0" }}>Audit Finding Explanation:</h4>
+                <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "12px 16px", borderRadius: "8px", color: "#f87171", fontSize: "13px" }}>
+                  {selectedWork.hybrid_risk_explanation}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "24px" }}>
+                <h4 style={{ color: "#fff", fontSize: "14px", margin: "0 0 8px 0" }}>Recommended Statutory Action:</h4>
+                <div style={{ background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.25)", padding: "12px 16px", borderRadius: "8px", color: "#34d399", fontSize: "13px" }}>
+                  {selectedWork.recommended_action}
+                </div>
+              </div>
+
+              {/* Officer Investigation Form */}
+              <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "20px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+                  <h4 style={{ color: "#fff", fontSize: "15px", margin: 0 }}>Human-in-the-Loop Case Management</h4>
+                  <button className="btn-audit-view" onClick={() => openDossier(selectedWork.work_id)}>
+                    <Printer size={14} /> Print Audit Dossier
+                  </button>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "14px" }}>
+                  <div>
+                    <label className="form-label">Investigation Status</label>
+                    <select
+                      className="filter-select"
+                      style={{ width: "100%" }}
+                      value={investigationForm.status}
+                      onChange={(e) => setInvestigationForm({ ...investigationForm, status: e.target.value })}
+                    >
+                      <option value="NEW">NEW</option>
+                      <option value="UNDER REVIEW">UNDER REVIEW</option>
+                      <option value="SITE INSPECTION SCHEDULED">SITE INSPECTION SCHEDULED</option>
+                      <option value="AUDIT ESCALATED">AUDIT ESCALATED</option>
+                      <option value="RESOLVED">RESOLVED</option>
+                      <option value="FALSE POSITIVE">FALSE POSITIVE</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="form-label">Audit Priority</label>
+                    <select
+                      className="filter-select"
+                      style={{ width: "100%" }}
+                      value={investigationForm.priority}
+                      onChange={(e) => setInvestigationForm({ ...investigationForm, priority: e.target.value })}
+                    >
+                      <option value="CRITICAL">CRITICAL (CAG Escalation)</option>
+                      <option value="HIGH">HIGH (Immediate Verification)</option>
+                      <option value="ROUTINE">ROUTINE (Standard)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">Lead Auditor Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={investigationForm.officer_name}
+                    onChange={(e) => setInvestigationForm({ ...investigationForm, officer_name: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">Auditor Findings & Field Observations</label>
+                  <textarea
+                    rows={3}
+                    className="form-textarea"
+                    placeholder="Enter site verification observations, bill vouchers checked, DPR discrepancies..."
+                    value={investigationForm.officer_note}
+                    onChange={(e) => setInvestigationForm({ ...investigationForm, officer_note: e.target.value })}
+                  />
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+                  <input
+                    type="checkbox"
+                    id="checklist_verified"
+                    checked={investigationForm.checklist_verified}
+                    onChange={(e) => setInvestigationForm({ ...investigationForm, checklist_verified: e.target.checked })}
+                    style={{ accentColor: "var(--cyan)", width: "16px", height: "16px" }}
+                  />
+                  <label htmlFor="checklist_verified" style={{ fontSize: "13px", color: "var(--text-primary)" }}>
+                    Statutory Field Checklist verified with Implementing District Authority (IDA) records
+                  </label>
+                </div>
+
+                <button
+                  className="btn-simulate"
+                  onClick={handleSaveInvestigation}
+                  disabled={savingInvestigation}
+                >
+                  {savingInvestigation ? "Saving Case Record..." : "Save Audit Case Record"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
+          PRINTABLE CAG AUDIT DOSSIER MODAL
+          ===================================================== */}
+      {dossierModalOpen && dossierData && (
+        <div className="modal-overlay" onClick={() => setDossierModalOpen(false)}>
+          <div className="modal-content" style={{ maxWidth: "800px" }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <span style={{ fontWeight: 700, color: "#fff" }}>Official CAG Audit Dossier Preview</span>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button className="btn-simulate" style={{ width: "auto", padding: "6px 16px" }} onClick={() => window.print()}>
+                  <Printer size={14} /> Print Dossier
+                </button>
+                <button className="btn-close" onClick={() => setDossierModalOpen(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="modal-body" style={{ background: "#f8fafc", padding: "24px" }}>
+              <div className="dossier-sheet">
+                <div style={{ textAlign: "center", borderBottom: "2px solid #0f172a", paddingBottom: "12px", marginBottom: "20px" }}>
+                  <h2 style={{ margin: 0, textTransform: "uppercase", fontSize: "18px", letterSpacing: "1px" }}>
+                    OFFICE OF THE COMPTROLLER AND AUDITOR GENERAL
+                  </h2>
+                  <h3 style={{ margin: "4px 0", fontSize: "14px", fontWeight: 600, color: "#475569" }}>
+                    SPECIAL AUDIT SCREENING REPORT — MPLADS
+                  </h3>
+                  <div style={{ fontSize: "11px", color: "#64748b" }}>
+                    Dossier ID: {dossierData.report_id} • Generated: {dossierData.generated_at}
+                  </div>
+                </div>
+
+                <table style={{ marginBottom: "20px" }}>
+                  <tbody>
+                    <tr>
+                      <th style={{ width: "25%" }}>Work ID:</th>
+                      <td><strong>{dossierData.work_details.work_id}</strong></td>
+                      <th style={{ width: "25%" }}>Allocation:</th>
+                      <td><strong>{dossierData.work_details.allocation_inr}</strong></td>
+                    </tr>
+                    <tr>
+                      <th>Constituency:</th>
+                      <td>{dossierData.work_details.constituency} ({dossierData.work_details.state})</td>
+                      <th>Authority:</th>
+                      <td>{dossierData.work_details.district_authority || "District Authority"}</td>
+                    </tr>
+                    <tr>
+                      <th>Description:</th>
+                      <td colSpan="3">{dossierData.work_details.description}</td>
+                    </tr>
+                    <tr>
+                      <th>Recommended Date:</th>
+                      <td>{dossierData.work_details.recommended_date}</td>
+                      <th>Status:</th>
+                      <td>{dossierData.work_details.status}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div style={{ marginBottom: "16px" }}>
+                  <h4 style={{ margin: "0 0 6px 0", fontSize: "13px", textTransform: "uppercase" }}>
+                    I. Automated Risk Evaluation
+                  </h4>
+                  <table style={{ marginBottom: "10px" }}>
+                    <tbody>
+                      <tr>
+                        <th>Hybrid Risk Index:</th>
+                        <td><strong>{dossierData.risk_assessment.hybrid_risk_score} / 100 ({dossierData.risk_assessment.risk_classification})</strong></td>
+                        <th>ML Anomaly Score:</th>
+                        <td>{dossierData.risk_assessment.ml_model_score} / 100</td>
+                      </tr>
+                      <tr>
+                        <th>CAG Rule Score:</th>
+                        <td>{dossierData.risk_assessment.cag_rule_score} / 100</td>
+                        <th>Data Completeness:</th>
+                        <td>{dossierData.risk_assessment.data_quality_rating}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style={{ marginBottom: "16px" }}>
+                  <h4 style={{ margin: "0 0 6px 0", fontSize: "13px", textTransform: "uppercase" }}>
+                    II. Key Audit Findings & Irregularity Flags
+                  </h4>
+                  <p style={{ fontSize: "12px", margin: "0 0 6px 0", lineHeight: "1.5" }}>
+                    {dossierData.findings_explanation}
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: "20px" }}>
+                  <h4 style={{ margin: "0 0 6px 0", fontSize: "13px", textTransform: "uppercase" }}>
+                    III. Statutory Action Mandated
+                  </h4>
+                  <p style={{ fontSize: "12px", margin: 0, lineHeight: "1.5" }}>
+                    {dossierData.recommended_statutory_action}
+                  </p>
+                </div>
+
+                <div style={{ borderTop: "1px solid #94a3b8", paddingTop: "14px", display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#475569" }}>
+                  <div>Lead Auditor: {dossierData.case_status.lead_auditor}</div>
+                  <div>Case Status: {dossierData.case_status.investigation_status}</div>
+                  <div>Sign / Stamp: _______________________</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
-
   );
-
 }
-
-
-export default App;

@@ -1,0 +1,289 @@
+# SIH26102 — AI-Powered MPLADS Anomaly & Risk Detection System
+## Comprehensive Project Explanation, Technical Architecture & Hackathon Judge Presentation Guide
+
+---
+
+# SECTION 1: The 30-Second Elevator Pitch (Say this directly to Judges)
+
+> *"Respected Judges, under Problem Statement **SIH26102**, we have developed an **Enterprise AI-Powered MPLADS Anomaly and Risk Screening Platform**.*
+>
+> *Under the MPLAD Scheme, each Member of Parliament is allocated ₹5 Crore per year for local constituency development. Historically, CAG audit reports highlight recurring irregularities: **tender-splitting** to bypass mandatory open e-tenders, **repetitive ghost works** in the same village, and **severe administrative dormancy**.*
+>
+> *Rather than relying on toy synthetic datasets, our production system screens the **entire official national dataset of 56,138 public works worth ₹3,350 Crores across 557 Parliamentary Constituencies and 33 States/UTs**.*
+>
+> *We combine a **three-model unsupervised Machine Learning ensemble** (Isolation Forest, Profile-Deduplicated LOF, and PCA reconstruction) with **codified CAG statutory procurement rules** to deliver real-time hybrid risk scores, explainable root-cause diagnostics, an interactive What-If simulation lab, and automated CAG audit dossiers."*
+
+---
+
+# SECTION 2: Problem Statement & Real-World Context (SIH26102)
+
+### What is MPLADS?
+- **Member of Parliament Local Area Development Scheme (MPLADS)**: A Central Sector Scheme fully funded by the Government of India.
+- Each MP can recommend works of developmental nature with emphasis on the creation of durable community assets (drinking water, primary education, public health, sanitation, roads, community facilities) up to **₹5 Crore per annum** in their constituency.
+- The District Authority (District Collector / District Magistrate / Implementing District Authority - IDA) examines eligibility, sanctions works, selects implementing agencies, and executes projects.
+
+### What are the Key Irregularities Highlighted by CAG Audits?
+1. **Public Procurement Tender-Splitting (GFR 2017 Rule 149 Evasion)**:
+   - Statutory rules mandate that works $\ge$ ₹5 Lakhs must undergo open competitive e-tendering.
+   - Corrupt or collusive actors split a ₹15–20 Lakh project into multiple small contracts priced at **₹4.85 Lakh to ₹4.99 Lakh** to award contracts directly without tenders.
+2. **Ghost Works & Localized Duplication Clusters**:
+   - Recommending identical work descriptions (e.g. *"Installation of solar street lights"*) 4 to 10 times in the **exact same village or block** within narrow intervals.
+3. **Severe Administrative Inaction & Dormancy (MPLADS Para 5.2)**:
+   - Statutory SLA specifies works must be sanctioned within 45 days. In practice, thousands of recommended works sit in *"Action Pending"* or *"Unsanctioned"* status for over 180–365 days.
+4. **Substantial Unspent Balances**:
+   - Funds released by the Government of India accumulate idle in district bank accounts without timely execution, leading to negative interest drag and unutilized development capital.
+
+---
+
+# SECTION 3: Screen-by-Screen UI Walkthrough (What is showing on the Frontend)
+
+```
++-----------------------------------------------------------------------------------+
+| [SIH26102 MPLADS AI]  National Prototype   |  PostgreSQL Live (56,138 Works)      |
++-----------------------------------------------------------------------------------+
+| [🏛️ Overview]  [🔍 Explorer]  [💰 Finances]  [🧪 AI Simulator]  [📋 Queue]  [🧠 Rules] |
++-----------------------------------------------------------------------------------+
+```
+
+### 1. Executive Topbar & Real-Time Status
+- **Brand Badge (`SIH26102 MPLADS AI — NATIONAL PROTOTYPE`)**: Clear identification of the SIH Problem Statement.
+- **Green Pulsing Status Pill (`PostgreSQL Live • 56,138 Works Monitored`)**: Live indicator proving that the system is actively querying a real production database (`localhost:5432/sih26102`), not static hardcoded mock files.
+- **Refresh Button**: Allows the user or judge to dynamically re-trigger live database and analytics queries.
+
+---
+
+### 2. Tab 1: 🏛️ National Overview (Executive Macro Intelligence)
+
+This tab gives high-level auditors a macro-summary of India's MPLADS implementation:
+
+#### A. The 6 Executive KPI Metric Cards
+1. **Monitored Works (56,138)**: Total real work records ingested from the official national MPLADS portal across 33 States and Union Territories.
+2. **Total Allocations (₹3,350.3 Cr)**: Cumulative value of all recommended works tracked in the system. (Total expenditure incurred: ₹4,318.1 Cr).
+3. **Critical Risk Works (400)**: Works with a Hybrid Risk Score $\ge 75$. These represent the top $0.7\%$ anomalous projects requiring immediate audit verification.
+4. **Tender-Split Pattern (1,838)**: Detects works allocated between ₹4.75L–₹4.99L, ₹9.5L–₹9.99L, or ₹24L–₹24.99L (statutory threshold evasion patterns).
+5. **Cluster Repetitions (725)**: Flags instances where the exact same work description is repeated $\ge 3$ times in the same village/block within narrow timeframes.
+6. **Data Quality Score (94.2%)**: Measures metadata transparency (penalizes records missing village, block, ward, or approval status).
+
+#### B. Interactive Visualizations (Recharts)
+- **Donut Chart (Hybrid Risk Classification)**:
+  - **CRITICAL** (Red): $\ge 75$ (400 works, 0.7%)
+  - **HIGH** (Orange): $55 - 74$ (6,148 works, 11.0%)
+  - **MEDIUM** (Amber): $35 - 54$ (19,221 works, 34.2%)
+  - **LOW** (Green): $< 35$ (30,369 works, 54.1%)
+- **Bar Chart (Top States by Work Volume & Flags)**:
+  - Compares total works against flagged anomalies in top states like Uttar Pradesh (6,122 works), Maharashtra, Bihar, and Rajasthan.
+
+---
+
+### 3. Tab 2: 🔍 Works Anomaly Explorer (Audit Discovery Grid)
+
+The search engine for auditors to drill down into any of the 56,138 works:
+
+- **Filter Bar**:
+  - **Search Input**: Debounced search across Work description (e.g. *"street lights"*, *"tube well"*), MP Name, Constituency (*"DARBHANGA"*), or Village.
+  - **Risk Level Dropdown**: Filter by `CRITICAL`, `HIGH`, `MEDIUM`, or `LOW`.
+  - **State Dropdown**: Filter across all 33 States/UTs.
+- **The Data Table**:
+  - **Work ID**: Unique system identifier (e.g., `REAL-WORK-000001`).
+  - **MP & Constituency**: Sponsoring Member of Parliament and Lok Sabha seat.
+  - **Work Description**: Community asset description.
+  - **Allocation**: Cost in Indian Rupees (₹).
+  - **ML Score**: Unsupervised anomaly score (0–100) from the ML ensemble.
+  - **CAG Score**: Rule violation points (0–100) from domain statutory checks.
+  - **Hybrid Risk**: Blended risk score ($60\% \text{ ML} + 40\% \text{ CAG Rules}$) with color-coded risk badge.
+  - **Signals Detected**: Quick chips highlighting `Split Tender`, `Cluster`, or `Inaction`.
+  - **"Audit Deep-Dive" Button**: Opens the full audit investigation drawer.
+
+---
+
+### 4. The "Audit Deep-Dive" Modal & Printable CAG Dossier
+
+When clicking **"Audit Deep-Dive"** on any work:
+1. **Risk Gauge Banner**: Displays the hybrid score alongside ML score, CAG rule score, and Data Quality score.
+2. **Audit Finding Explanation**: Human-readable explainability factor (e.g., *"Potential tender-splitting detected near ₹5L threshold | Work repeated 4 times in same village | Allocation 3.2x state median"*).
+3. **Recommended Statutory Action**: Directives for auditors (e.g., *"Examine procurement method under GFR Rule 149; Demand geo-tagged photos and completion certificate from IDA"*).
+4. **Human-in-the-Loop Case Management**:
+   - Status update: `NEW` $\rightarrow$ `UNDER REVIEW` $\rightarrow$ `SITE INSPECTION SCHEDULED` $\rightarrow$ `AUDIT ESCALATED` $\rightarrow$ `RESOLVED` $\rightarrow$ `FALSE POSITIVE`.
+   - Priority selection: `CRITICAL`, `HIGH`, `ROUTINE`.
+   - Auditor name and field investigation notes.
+   - Field verification checklist checkbox.
+   - Saves directly to PostgreSQL `work_investigations`.
+5. **"Print Audit Dossier" Button**:
+   - Generates an official, printable **Office of the Comptroller and Auditor General (CAG) Special Audit Screening Report** complete with Dossier ID, timestamp, finding tables, and signature blocks.
+
+---
+
+### 5. Tab 3: 💰 MP & Constituency Financials
+
+Tracks the macro-financial position of all **557 Members of Parliament**:
+- **Entitlement**: Statutory ₹17 Crore entitlement window.
+- **Funds Released by GOI** vs **Sanctioned Cost** vs **Actual Expenditure Incurred**.
+- **Unspent Balance**: Highlights constituencies where funds ($>30\%$ or $>40\%$) are accumulating idle in district bank accounts.
+- **Financial Findings**: Flags accounts where expenditure exceeds releases or where large sanction gaps exist.
+
+---
+
+### 6. Tab 4: 🧪 Live AI Audit Simulator ("What-If" Lab) — *THE STAR JUDGE DEMO*
+
+Designed specifically for live hackathon jury demonstrations:
+
+- **3 Instant Presets**:
+  - **Preset 1: "Tender-Split Street Lights (Darbhanga)"** (₹4,87,000, repeated 4 times, unsanctioned — GFR Rule 149 evasion pattern).
+  - **Preset 2: "7x Median Road Allocation (Karauli)"** (₹35,00,000, 7x higher than state median).
+  - **Preset 3: "Dormant Water Plant (Assam)"** (₹15,00,000, 240 days inactive without sanction).
+- **Interactive Controls**: Sliders and input fields allowing judges to tweak any parameter (Work Title, State, Allocation Amount, Delay Days, Local Repetitions).
+- **Live Inference Output**:
+  - Sub-50ms execution via `POST /api/ml/predict`.
+  - Animated **Radial Score Gauge** (e.g., **85.4 CRITICAL**).
+  - Score breakdown: ML Ensemble (60%) vs CAG Rules (40%).
+  - Active Anomaly Drivers list.
+  - Recommended Statutory Actions checklist.
+
+---
+
+### 7. Tab 5: 📋 Officer Case Queue
+- Central triage queue displaying all works marked for investigation.
+- Tracks lead auditors, priority levels, inspection dates, and case resolution.
+
+---
+
+### 8. Tab 6: 🧠 AI & CAG Rules Methodology
+- Complete architectural transparency:
+  - Unsupervised Ensemble weights: $45\%$ Isolation Forest + $35\%$ Profile-Deduplicated LOF + $20\%$ PCA Reconstruction Error.
+  - Blending ratio: $60\%$ ML Ensemble + $40\%$ CAG Domain Rules.
+  - Statutory rule definitions (GFR 2017 Rule 149, MPLADS Guidelines Para 3.12, Para 5.2).
+
+---
+
+# SECTION 4: Technical Architecture & Implementation (Under the Hood)
+
+```
+[data/raw/MPLADS.csv] (60,359 rows) + [data/raw/mplads_real.csv] (557 MPs)
+                         │
+                         ▼
+             [ml/real_data_pipeline.py]
+  • Log transforms & baseline median ratios
+  • Tender-split detection (near ₹5L/₹10L/₹25L)
+  • Village/Block location repetition clustering
+  • Delay & dormancy calculation (>180 days)
+                         │
+                         ▼
+             [ml/train_real_model.py]
+  • StandardScaler (15 behavioral features)
+  • Isolation Forest (300 trees, 45% weight)
+  • Profile-Deduplicated LOF (35% weight)
+  • PCA Reconstruction Error (20% weight)
+  • CAG Statutory Domain Rule Engine (40% blend)
+  • Saves models to /models (*.pkl, *.json)
+                         │
+                         ▼
+             [PostgreSQL Database: 5432]
+  • real_works (56,138 indexed rows)
+  • constituency_finances (557 indexed rows)
+  • work_investigations (Officer case management)
+                         │
+                         ▼
+                [FastAPI Backend: 8000]
+  • /api/analytics/national, state-wise, category-wise
+  • /api/works (paginated, multi-filter search)
+  • /api/ml/predict (sub-50ms live inference)
+  • /api/audit-dossier/{id} (printable dossier report)
+                         │
+                         ▼
+               [React Vite Frontend: 5173]
+  • Modern dark theme with Plus Jakarta Sans & glassmorphism
+  • Recharts interactive data visualization
+  • Interactive "What-If" AI Audit Simulator
+```
+
+### 1. Data Ingestion (`ml/real_data_pipeline.py`)
+- Cleaned and parsed 60,359 rows of raw portal data down to 56,138 unique works and 557 constituency accounts.
+- Derived domain features:
+  - `split_tender_flag`: Allocations in ₹4.75L–₹4.99L, ₹9.5L–₹9.99L, ₹24.0L–₹24.99L windows.
+  - `same_work_location_count`: Repetitions of identical descriptions within the same village or block.
+  - `allocation_vs_state_median`: Normalized cost ratio compared to the state's median for that category.
+  - `days_since_recommendation`: Days elapsed since the MP signed the recommendation letter.
+  - `data_quality_score`: 100-point score penalized for missing village, block, ward, or status fields.
+
+### 2. Machine Learning Training (`ml/train_real_model.py`)
+- Standardized 15 behavioral features using `StandardScaler`.
+- Trained **Isolation Forest** (300 estimators, $5\%$ contamination).
+- Trained **Profile-Deduplicated Local Outlier Factor (LOF)**: Deduplicated identical feature profiles before neighborhood density calculation to eliminate zero-distance mathematical distortion.
+- Computed **PCA Reconstruction Error**: Deviations from principal component manifolds for anomalous allocation spikes.
+- Percentile-normalized all model outputs to a uniform 0–100 scale.
+- Serialized trained artifacts to `models/` (`real_work_scaler.pkl`, `real_work_isolation_forest.pkl`, `real_work_pca.pkl`, `real_work_metadata.json`).
+
+### 3. PostgreSQL Database Layer (`db_models.py` & `database.py`)
+- Running locally on `localhost:5432/sih26102`.
+- Stores:
+  - `real_works`: 56,138 indexed rows.
+  - `constituency_finances`: 557 indexed rows.
+  - `work_investigations`: Active auditor investigation records.
+
+### 4. FastAPI Backend (`main.py`)
+- High-performance RESTful API with CORS enabled for `http://localhost:5173`.
+- Endpoints:
+  - `GET /api/analytics/national`: Macro KPIs, totals, risk distribution, signal counts.
+  - `GET /api/analytics/state-wise`: State-level risk breakdown.
+  - `GET /api/analytics/category-wise`: Category allocation and anomaly rates.
+  - `GET /api/works`: Paginated, indexed search and multi-criteria filtering.
+  - `GET /api/works/{work_id}`: Full deep-dive details and active investigation.
+  - `POST /api/ml/predict`: Live inference engine executing `predictor.predict_work(data)`.
+  - `GET /api/audit-dossier/{work_id}`: Printable CAG audit dossier report.
+
+---
+
+# SECTION 5: Step-by-Step Live Demo Script for Judges
+
+Follow this exact flow during your live presentation:
+
+### Step 1: Open the National Overview
+- Point to the top bar: *"Judges, you can see our live database connection tracking 56,138 real MPLADS works."*
+- Point to the KPI cards: *"Notice that out of ₹3,350 Crores monitored, our AI isolated 400 CRITICAL anomalies and 1,838 works showing contract-splitting patterns."*
+
+### Step 2: Demonstrate the Works Anomaly Explorer
+- Switch to the **Works Anomaly Explorer** tab.
+- In the Risk Level dropdown, select **CRITICAL**.
+- Show the judges: *"These are the highest-risk projects in India. Notice the signals column highlighting split-tenders and localized repetition."*
+- Click **"Audit Deep-Dive"** on any work.
+- Explain: *"Here is our explainability layer. It doesn't just give a black-box score; it explicitly tells the auditor that the allocation is 3.5x higher than the state median and mandates an inspection under GFR Rule 149."*
+- Click **"Print Audit Dossier"** to show the formal CAG Audit Report.
+
+### Step 3: Trigger the Live AI Simulator (The Winning Moment)
+- Switch to the **Live AI Audit Simulator** tab.
+- Tell the judges: *"Now, let's see how our AI evaluates a new proposal submitted by a district authority in real-time."*
+- Click **"Scenario 1: Tender-Split Street Lights (Darbhanga)"**.
+- Explain: *"Notice the allocation is ₹4,87,000—just below the ₹5,00,000 e-tendering threshold—and it has been recommended 4 times in the same village."*
+- Click **"Run Real-Time AI Audit Analysis"**.
+- Show the gauge animating to **85.4 CRITICAL**:
+  *"In less than 50 milliseconds, our model flagged the evasion pattern and generated statutory action items for the auditor."*
+
+---
+
+# SECTION 6: Judge Q&A Cheat Sheet (Tough Questions & Winning Answers)
+
+### Q1: "Is a high risk score proof of fraud or corruption?"
+> **Winning Answer**: *"No, sir/ma'am. We adhere strictly to audit standards: **a risk score is screening intelligence, not a judicial conviction**. Our system is a human-in-the-loop decision-support platform designed to help overburdened CAG auditors prioritize which 400 projects to physically inspect out of 56,000."*
+
+### Q2: "Why did you use unsupervised anomaly detection instead of supervised models like XGBoost or Random Forest?"
+> **Winning Answer**: *"That is a fundamental domain constraint of public procurement. The official government portal does not contain a labeled 'fraud = 1' column. Training a supervised classifier on synthetic labels creates severe real-world bias. Unsupervised anomaly detection (Isolation Forest + LOF + PCA) calibrated with statutory CAG audit rules is the gold standard for real-world audit screening."*
+
+### Q3: "What is Profile-Deduplicated LOF and why was it necessary?"
+> **Winning Answer**: *"In real MPLADS data, many projects have identical descriptions and amounts (e.g., standard street lights). Standard Local Outlier Factor fails because multiple identical vectors result in a neighborhood distance of zero. We developed a profile-deduplication mapping that calculates local densities on unique behavioral feature vectors and maps them back, preventing zero-distance mathematical distortion."*
+
+### Q4: "Can this scale to all government schemes (e.g., PMGSY, MGNREGA)?"
+> **Winning Answer**: *"Absolutely. The architecture is completely modular. The data pipeline extracts financial amounts, dates, location hierarchies, and descriptions. By swapping the domain rule parameters, the same ensemble can screen MGNREGA muster rolls or PMGSY road contracts."*
+
+---
+
+# SECTION 7: File Reference Guide
+
+- **Frontend Application**: `Frontend/src/App.jsx`
+- **Frontend Design System**: `Frontend/src/App.css`
+- **FastAPI Backend Server**: `main.py`
+- **Database Schema Models**: `db_models.py`
+- **Live Inference Predictor**: `ml/ml_predictor.py`
+- **Model Training Pipeline**: `ml/train_real_model.py`
+- **Data Ingestion Pipeline**: `ml/real_data_pipeline.py`
+- **Database Seeder**: `ml/seed_real_database.py`
+- **Trained Model Metadata**: `models/real_work_metadata.json`

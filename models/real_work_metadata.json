@@ -1,0 +1,54 @@
+{
+  "model_version": "3.1.0-real-mplads",
+  "total_training_records": 56138,
+  "features": [
+    "allocation_amount_log",
+    "allocation_vs_state_median",
+    "allocation_vs_constituency_median",
+    "allocation_vs_category_median",
+    "days_since_recommendation",
+    "recommendation_year",
+    "recommendation_month",
+    "recommendation_quarter",
+    "work_description_length",
+    "work_word_count",
+    "same_work_description_count",
+    "same_work_location_count",
+    "split_tender_flag",
+    "cluster_work_flag",
+    "prolonged_inaction_flag"
+  ],
+  "feature_medians": {
+    "allocation_amount_log": 12.899222326086994,
+    "allocation_vs_state_median": 1.0,
+    "allocation_vs_constituency_median": 1.0,
+    "allocation_vs_category_median": 1.0,
+    "days_since_recommendation": 131.0,
+    "recommendation_year": 2023.0,
+    "recommendation_month": 9.0,
+    "recommendation_quarter": 3.0,
+    "work_description_length": 59.0,
+    "work_word_count": 9.0,
+    "same_work_description_count": 439.0,
+    "same_work_location_count": 1.0,
+    "split_tender_flag": 0.0,
+    "cluster_work_flag": 0.0,
+    "prolonged_inaction_flag": 0.0
+  },
+  "risk_distribution": {
+    "LOW": 30369,
+    "MEDIUM": 19221,
+    "HIGH": 6148,
+    "CRITICAL": 400
+  },
+  "critical_threshold": 75.0,
+  "high_threshold": 55.0,
+  "medium_threshold": 35.0,
+  "weights": {
+    "isolation_forest": 0.45,
+    "local_outlier_factor": 0.35,
+    "pca_reconstruction": 0.2,
+    "ml_weight": 0.6,
+    "rule_weight": 0.4
+  }
+}
