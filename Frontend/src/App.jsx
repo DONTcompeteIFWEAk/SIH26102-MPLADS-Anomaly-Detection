@@ -2116,6 +2116,94 @@ export default function App() {
       </main>
 
       {/* =====================================================
+          GLOBAL FOOTER (All Rights Reserved across all pages)
+          ===================================================== */}
+      <footer className="app-footer">
+        <div className="footer-inner">
+          <div className="footer-top-grid">
+            {/* Column 1: Brand & Ministry Information */}
+            <div className="footer-col footer-col-brand">
+              <div className="footer-brand-header">
+                <div className="brand-badge" style={{ padding: "4px 10px" }}>
+                  <ShieldAlert size={16} className="brand-icon" />
+                  <span className="brand-title" style={{ fontSize: "13px" }}>SIH26102</span>
+                  <span className="brand-tag" style={{ fontSize: "9px" }}>MPLADS</span>
+                </div>
+                <span className="footer-tagline">National Autonomous Anomaly Detection & Financial Surveillance System</span>
+              </div>
+              <p className="footer-description">
+                Engineered for the Ministry of Statistics and Programme Implementation (MoSPI) and District Vigilance Authorities. Continuously monitoring 105,000+ public civil works across all 557 parliamentary constituencies using a 3-model unsupervised ensemble and codified CAG statutory rules.
+              </p>
+              <div className="footer-pills">
+                <span className="footer-pill">GFR 2017 Rule 149 Compliance</span>
+                <span className="footer-pill">CAG Forensic Standards</span>
+                <span className="footer-pill">Bilingual Plain Language</span>
+              </div>
+            </div>
+
+            {/* Column 2: System Navigation Modules */}
+            <div className="footer-col">
+              <h4 className="footer-heading">Audit Modules</h4>
+              <ul className="footer-links">
+                <li><button onClick={() => { setActiveTab("overview"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>National Overview & Timeline</button></li>
+                <li><button onClick={() => { setActiveTab("map"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Geospatial GIS Anomaly Map</button></li>
+                <li><button onClick={() => { setActiveTab("explorer"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Works Anomaly Explorer (105k)</button></li>
+                <li><button onClick={() => { setActiveTab("finances"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>MP & Constituency Financials</button></li>
+                <li><button onClick={() => { setActiveTab("simulator"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Live AI Audit Simulator</button></li>
+                <li><button onClick={() => { setActiveTab("investigations"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Officer Case Management</button></li>
+                <li><button onClick={() => { setActiveTab("methodology"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>AI & CAG Rule Architecture</button></li>
+              </ul>
+            </div>
+
+            {/* Column 3: Security & Governance Compliance */}
+            <div className="footer-col">
+              <h4 className="footer-heading">Security & Governance</h4>
+              <div className="footer-compliance-items">
+                <div className="compliance-item">
+                  <span className="compliance-icon">🔒</span>
+                  <div>
+                    <strong>Cryptographic Audit Trails</strong>
+                    <p>Tamper-evident logging conforming to ISO 27001 public sector standards.</p>
+                  </div>
+                </div>
+                <div className="compliance-item">
+                  <span className="compliance-icon">🏛️</span>
+                  <div>
+                    <strong>MoSPI e-SAKSHI Integration</strong>
+                    <p>Direct sync pipeline with official parliamentary fund disbursement data.</p>
+                  </div>
+                </div>
+                <div className="compliance-item">
+                  <span className="compliance-icon">🇮🇳</span>
+                  <div>
+                    <strong>Smart India Hackathon 2024</strong>
+                    <p>Problem Statement SIH26102 — Autonomous Public Fund Surveillance.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Tricolor Accent Divider */}
+          <div className="footer-tricolor-divider"></div>
+
+          {/* Bottom Bar with All Rights Reserved */}
+          <div className="footer-bottom-bar">
+            <div className="copyright-text">
+              <strong>© 2024–{new Date().getFullYear()} SIH26102 — Autonomous MPLADS Anomaly Detection & Surveillance System. All Rights Reserved.</strong>
+              <span className="rights-sub">
+                Designed & Developed for Smart India Hackathon (SIH). Governed under the Official Guidelines of the Ministry of Statistics and Programme Implementation (MoSPI), Government of India.
+              </span>
+            </div>
+            <div className="footer-bottom-badges">
+              <span className="badge-legal">All Rights Reserved</span>
+              <span className="badge-national">Made with 🇮🇳 for Transparent Governance</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* =====================================================
           WORK DEEP-DIVE & INVESTIGATION MODAL
           ===================================================== */}
       {workModalOpen && selectedWork && (
@@ -2494,6 +2582,9 @@ export default function App() {
                   <div>Lead Auditor: {dossierData.case_status.lead_auditor}</div>
                   <div>Case Status: {dossierData.case_status.investigation_status}</div>
                   <div>Sign / Stamp: _______________________</div>
+                </div>
+                <div style={{ textAlign: "center", fontSize: "10px", color: "#64748b", marginTop: "12px", borderTop: "1px dashed #cbd5e1", paddingTop: "8px" }}>
+                  © 2024–{new Date().getFullYear()} Office of the Comptroller and Auditor General (CAG) & MoSPI. All Rights Reserved. Official Statutory Record.
                 </div>
               </div>
             </div>
