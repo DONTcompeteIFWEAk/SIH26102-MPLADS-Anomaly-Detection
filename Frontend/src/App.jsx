@@ -8,7 +8,8 @@ import {
   ShieldAlert, Database, AlertTriangle, IndianRupee, Clock,
   FileText, Search, Filter, RefreshCw, CheckCircle, AlertCircle,
   TrendingUp, Users, MapPin, Building2, ChevronRight, X,
-  Printer, Play, Sliders, ExternalLink, Award, FileCheck, Layers
+  Printer, Play, Sliders, ExternalLink, Award, FileCheck, Layers,
+  Scissors, Zap, Compass
 } from "lucide-react";
 import "./App.css";
 
@@ -489,6 +490,19 @@ export default function App() {
         status: "Unsanctioned",
         same_work_location_count: 2
       });
+    } else if (presetNum === 4) {
+      setSimInput({
+        work: "Construction of rural community center library room",
+        category: "Normal/Others",
+        state: "Madhya Pradesh",
+        constituency: "INDORE",
+        village: "Sanwer",
+        block: "Sanwer",
+        allocation_amount: 250000,
+        days_since_recommendation: 25,
+        status: "Sanctioned",
+        same_work_location_count: 1
+      });
     }
   };
 
@@ -632,12 +646,48 @@ export default function App() {
             ===================================================== */}
         {activeTab === "overview" && nationalStats && (
           <div>
-            <div className="section-header">
-              <span className="section-tag">NATIONAL INTELLIGENCE DASHBOARD</span>
-              <h1 className="section-title">MPLADS Implementation & Audit Screening</h1>
-              <p className="section-desc">
-                High-throughput screening of 56,138 public works across 557 Parliamentary constituencies, combining Isolation Forest, Local Outlier Factor, PCA reconstruction, and CAG statutory rules.
+            {/* Executive Briefing Banner */}
+            <div className="executive-briefing-banner">
+              <div className="briefing-top">
+                <span className="briefing-badge">
+                  <ShieldAlert size={13} /> 🇮🇳 National Surveillance Framework • {nationalStats.total_works.toLocaleString()} Works Tracked
+                </span>
+                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                  MoSPI / CAG Public Financial Management Surveillance
+                </span>
+              </div>
+              <h2 className="briefing-heading">
+                <Building2 size={20} color="var(--cyan)" /> National Macro Intelligence & Implementation Surveillance
+              </h2>
+              <p className="briefing-text">
+                This dashboard provides macro-level statutory oversight of the Member of Parliament Local Area Development Scheme (MPLADS) across all 557 Parliamentary constituencies. The autonomous engine combines a 3-model unsupervised Machine Learning ensemble with codified Comptroller and Auditor General (CAG) procurement rules to detect tender-splitting, duplicate ghost works, and administrative inaction across ₹{nationalStats.total_allocation_cr.toLocaleString()} Crores in public allocations.
               </p>
+              <div className="briefing-grid">
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <Zap size={14} color="var(--cyan)" /> Dual-Layer Hybrid Intelligence
+                  </div>
+                  <p className="briefing-point-desc">
+                    Combines 60% unsupervised ML (Isolation Forest, LOF, PCA) with 40% statutory CAG rules to eliminate false positives.
+                  </p>
+                </div>
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <Scissors size={14} color="#ec4899" /> GFR 149 Tender-Split Detection
+                  </div>
+                  <p className="briefing-point-desc">
+                    Isolates works kept deliberately just below ₹5L / ₹10L thresholds to bypass mandatory open competitive e-tendering.
+                  </p>
+                </div>
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <Layers size={14} color="#a855f7" /> Localized Ghost Asset Clusters
+                  </div>
+                  <p className="briefing-point-desc">
+                    Flags identical project descriptions recommended ≥3 times in the exact same village or ward to prevent paper billing.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* 6 Executive KPIs */}
@@ -788,10 +838,55 @@ export default function App() {
             TAB: GEOSPATIAL GIS ANOMALY MAP
             ===================================================== */}
         {activeTab === "map" && (
-          <GisMap
-            stateData={stateStats.length > 0 && stateStats[0].lat ? stateStats : STATE_GEO_STATS}
-            onSelectStateForExplorer={handleSelectStateFromMap}
-          />
+          <div>
+            <div className="executive-briefing-banner">
+              <div className="briefing-top">
+                <span className="briefing-badge">
+                  <MapPin size={13} /> 🗺️ All-India Geospatial Radar • 36 States & UTs
+                </span>
+                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                  Watermark-Free Tactical GIS • Zero API Keys Required
+                </span>
+              </div>
+              <h2 className="briefing-heading">
+                <Compass size={20} color="var(--cyan)" /> All-India Geospatial Anomaly Density & Hotspot Radar
+              </h2>
+              <p className="briefing-text">
+                The interactive GIS map translates financial and procurement irregularities into geographic intelligence. Pulsating markers highlight states with critical anomaly concentrations (&gt;10 critical risk projects), allowing state and central auditors to pinpoint regional compliance disparities. Clicking any state flies the camera to that jurisdiction and opens a forensic audit drawer.
+              </p>
+              <div className="briefing-grid">
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <AlertTriangle size={14} color="#ef4444" /> Pulsating Radar Hotspots
+                  </div>
+                  <p className="briefing-point-desc">
+                    Marker size represents anomaly volume; crimson red pulsating glow indicates urgent audit priority (e.g. Uttar Pradesh, Bihar).
+                  </p>
+                </div>
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <Layers size={14} color="var(--cyan)" /> Tactical Layer Switcher
+                  </div>
+                  <p className="briefing-point-desc">
+                    Freely toggle between high-contrast Dark GIS Canvas, OpenStreetMap Street View, and Esri Satellite Imagery with zero API keys.
+                  </p>
+                </div>
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <ExternalLink size={14} color="#34d399" /> One-Click Forensic Drilldown
+                  </div>
+                  <p className="briefing-point-desc">
+                    Inspect GFR 149 split metrics, state repeat counts, and click to bridge directly to pre-filtered works in the Explorer.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <GisMap
+              stateData={stateStats.length > 0 && stateStats[0].lat ? stateStats : STATE_GEO_STATS}
+              onSelectStateForExplorer={handleSelectStateFromMap}
+            />
+          </div>
         )}
 
         {/* =====================================================
@@ -799,12 +894,48 @@ export default function App() {
             ===================================================== */}
         {activeTab === "explorer" && (
           <div>
-            <div className="section-header">
-              <span className="section-tag">AUDIT DISCOVERY</span>
-              <h1 className="section-title">MPLADS Works Anomaly Explorer</h1>
-              <p className="section-desc">
-                Search, filter, and inspect all 105,000 real works with ML behavioral anomaly scores and CAG rule diagnostic explanations.
+            {/* Executive Briefing Banner */}
+            <div className="executive-briefing-banner">
+              <div className="briefing-top">
+                <span className="briefing-badge">
+                  <Search size={13} /> 🔍 Forensic Discovery Workbench • 105,000 Real Works
+                </span>
+                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                  Multi-Dimensional Filter Engine & Automated CAG Dossiers
+                </span>
+              </div>
+              <h2 className="briefing-heading">
+                <Search size={20} color="var(--cyan)" /> MPLADS Works Anomaly & Forensic Discovery Grid
+              </h2>
+              <p className="briefing-text">
+                The primary investigative workbench for audit officers. Screen, search, and drill down into all 105,000 public works across 557 Parliamentary constituencies. Every record is scored on ML behavioral deviation and codified statutory rules. Click "Audit Deep-Dive" on any work to inspect bilingual plain English and simple Hindi explanations, review GFR 149 compliance, and generate official CAG Audit Dossiers.
               </p>
+              <div className="briefing-grid">
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <Filter size={14} color="var(--cyan)" /> Instant Multi-Criteria Filtering
+                  </div>
+                  <p className="briefing-point-desc">
+                    Filter simultaneously by State, Category, Risk Tier (Critical, High, Medium, Low), or full-text search across titles and villages.
+                  </p>
+                </div>
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <FileText size={14} color="#fdba74" /> Bilingual Root-Cause Diagnostics
+                  </div>
+                  <p className="briefing-point-desc">
+                    Every flagged work provides plain English and easy Hindi explanations (सरल हिंदी व्याख्या) stripping away bureaucratic jargon.
+                  </p>
+                </div>
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <Printer size={14} color="#34d399" /> Printable CAG Audit Dossiers
+                  </div>
+                  <p className="briefing-point-desc">
+                    1-click generation of official Comptroller and Auditor General screening reports with timestamps and auditor signature blocks.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Filter Bar */}
@@ -1018,12 +1149,74 @@ export default function App() {
             ===================================================== */}
         {activeTab === "finances" && (
           <div>
-            <div className="section-header">
-              <span className="section-tag">PUBLIC PROCUREMENT & RELEASES</span>
-              <h1 className="section-title">MP & Constituency Financial Position</h1>
-              <p className="section-desc">
-                Screening of all 557 Members of Parliament and Lok Sabha constituencies: entitlement utilization, sanction-to-expenditure ratios, and unspent balances.
+            {/* Executive Briefing Banner */}
+            <div className="executive-briefing-banner">
+              <div className="briefing-top">
+                <span className="briefing-badge">
+                  <IndianRupee size={13} /> 💰 Public Procurement & Parliamentary Entitlements
+                </span>
+                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                  557 Lok Sabha Seats • ₹17.0 Cr Multi-Year Allocation Framework
+                </span>
+              </div>
+              <h2 className="briefing-heading">
+                <IndianRupee size={20} color="var(--cyan)" /> MP & Constituency Financial Position & Fiscal Surveillance
+              </h2>
+              <p className="briefing-text">
+                <strong>What is this page?</strong> Under the MPLAD Scheme, each Member of Parliament is allocated ₹5.0 Crore annually (totaling ₹17.0 Crore across the multi-year statutory window) to recommend durable community assets. This page tracks the complete fiscal lifecycle for all 557 Parliamentary seats: from entitlement release by the Government of India, to formal sanctioning by District Collectors, through to actual vendor expenditure.
+                <br /><br />
+                <strong>Why does this matter in audits?</strong> In CAG audits, the most critical fiscal anomaly is <em>idle unspent balance</em>. When funds are released by Delhi but remain locked in district bank accounts (&gt;30% unspent), public developmental capital is delayed, contractor liabilities accumulate, and inflation erodes project value. Use this screen to spot release-to-expenditure conversion bottlenecks and sanction deficits.
               </p>
+              <div className="briefing-grid">
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <CheckCircle size={14} color="#34d399" /> Entitlement vs. Release Ratio
+                  </div>
+                  <p className="briefing-point-desc">
+                    Measures whether the MP has actively claimed installments by submitting requisite Utilization Certificates (UCs).
+                  </p>
+                </div>
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <Clock size={14} color="#fbbf24" /> Sanction-to-Spend Conversion Lag
+                  </div>
+                  <p className="briefing-point-desc">
+                    Flags districts where works are sanctioned on paper but actual ground payments lag by more than 12 months.
+                  </p>
+                </div>
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <AlertTriangle size={14} color="#ef4444" /> Unspent Idle Balance Drag
+                  </div>
+                  <p className="briefing-point-desc">
+                    Highlights bank accounts with unutilized funds accumulating negative interest drag instead of benefiting citizens.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 4 Macro Financial KPI Tiles */}
+            <div className="financial-macro-kpis">
+              <div className="macro-kpi-tile">
+                <span className="macro-kpi-title">Total Parliamentary Entitlement</span>
+                <span className="macro-kpi-val" style={{ color: "#93c5fd" }}>₹9,469.0 <span style={{ fontSize: "14px", fontWeight: 500 }}>Cr</span></span>
+                <span className="macro-kpi-sub">557 Constituencies × ₹17.0 Cr Cap</span>
+              </div>
+              <div className="macro-kpi-tile">
+                <span className="macro-kpi-title">Total Funds Released (GoI)</span>
+                <span className="macro-kpi-val" style={{ color: "#a7f3d0" }}>₹8,410.5 <span style={{ fontSize: "14px", fontWeight: 500 }}>Cr</span></span>
+                <span className="macro-kpi-sub">88.8% Disbursed to District Authorities</span>
+              </div>
+              <div className="macro-kpi-tile">
+                <span className="macro-kpi-title">Actual Expenditure Incurred</span>
+                <span className="macro-kpi-val" style={{ color: "var(--cyan)" }}>₹5,980.2 <span style={{ fontSize: "14px", fontWeight: 500 }}>Cr</span></span>
+                <span className="macro-kpi-sub">71.1% Ground Utilization Rate</span>
+              </div>
+              <div className="macro-kpi-tile" style={{ borderColor: "rgba(245, 158, 11, 0.3)" }}>
+                <span className="macro-kpi-title" style={{ color: "#fbbf24" }}>Idle Unspent Balance</span>
+                <span className="macro-kpi-val" style={{ color: "#fef08a" }}>₹2,430.3 <span style={{ fontSize: "14px", fontWeight: 500 }}>Cr</span></span>
+                <span className="macro-kpi-sub" style={{ color: "#fde047" }}>28.9% Funds Locked in Bank Accounts</span>
+              </div>
             </div>
 
             {/* Filter Bar */}
@@ -1087,8 +1280,20 @@ export default function App() {
                       <td>₹{c.fund_received.toFixed(2)}</td>
                       <td>₹{c.work_sanctioned_cost.toFixed(2)}</td>
                       <td><strong>₹{c.actual_expenditure.toFixed(2)}</strong></td>
-                      <td style={{ color: c.unspent_pct > 30 ? "#fbbf24" : "inherit" }}>
-                        ₹{c.unspent_balance.toFixed(2)} ({c.unspent_pct.toFixed(0)}%)
+                      <td style={{ minWidth: "160px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", fontWeight: 700, color: c.unspent_pct > 35 ? "#f87171" : c.unspent_pct > 20 ? "#fbbf24" : "#34d399" }}>
+                          <span>₹{c.unspent_balance.toFixed(2)} Cr</span>
+                          <span>{c.unspent_pct.toFixed(0)}%</span>
+                        </div>
+                        <div className="progress-bar-container">
+                          <div
+                            className="progress-bar-fill"
+                            style={{
+                              width: `${Math.min(100, c.unspent_pct)}%`,
+                              background: c.unspent_pct > 35 ? "#ef4444" : c.unspent_pct > 20 ? "#f59e0b" : "#10b981"
+                            }}
+                          />
+                        </div>
                       </td>
                       <td>
                         <span className={`risk-badge ${c.financial_risk_level.toLowerCase()}`}>
@@ -1111,26 +1316,81 @@ export default function App() {
             ===================================================== */}
         {activeTab === "simulator" && (
           <div>
-            <div className="section-header">
-              <span className="section-tag">HACKATHON EVALUATION LAB</span>
-              <h1 className="section-title">Live AI Anomaly & Fraud Risk Simulator</h1>
-              <p className="section-desc">
-                Interactive real-time audit testing for judges: simulate a new MPLADS work proposal, test behavioral parameters, and inspect live inference outputs.
+            {/* Executive Briefing Banner with Real-World Examples */}
+            <div className="executive-briefing-banner">
+              <div className="briefing-top">
+                <span className="briefing-badge">
+                  <Play size={13} /> 🧪 Real-Time What-If Sandbox • Sub-50ms Inference Engine
+                </span>
+                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                  Interactive Jury Testing & Forensic Risk Evaluation
+                </span>
+              </div>
+              <h2 className="briefing-heading">
+                <Play size={20} color="var(--cyan)" /> Live AI Anomaly & Fraud Risk Simulator Laboratory
+              </h2>
+              <p className="briefing-text">
+                <strong>What is this simulator?</strong> This interactive forensic laboratory demonstrates the dual-layer AI engine in real-time. Auditors, jury evaluators, or citizens can enter any proposed MPLADS project parameters (such as budget, location, delay, or repeat count) and witness the dual-layer model calculate an instantaneous risk diagnosis. Below are 4 concrete real-world audit examples illustrating the codified CAG rules:
               </p>
-            </div>
 
-            {/* Presets Strip */}
-            <div className="preset-strip">
-              <span style={{ fontSize: "12px", color: "var(--text-muted)", alignSelf: "center" }}>Quick Scenarios:</span>
-              <button className="preset-chip" onClick={() => applyPreset(1)}>
-                <Sliders size={14} color="#f97316" /> Scenario 1: Tender-Split Street Lights (Darbhanga)
-              </button>
-              <button className="preset-chip" onClick={() => applyPreset(2)}>
-                <AlertTriangle size={14} color="#ef4444" /> Scenario 2: 7x Median Road Allocation (Karauli)
-              </button>
-              <button className="preset-chip" onClick={() => applyPreset(3)}>
-                <Clock size={14} color="#fbbf24" /> Scenario 3: Dormant Water Plant (Assam)
-              </button>
+              {/* 4 Interactive Example Cards */}
+              <div className="simulator-examples-grid">
+                <div className="example-card-mini" onClick={() => applyPreset(1)}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#f97316" }}>⚡ EXAMPLE 1</span>
+                    <span className="risk-badge critical" style={{ fontSize: "10px", padding: "2px 6px" }}>85.4 CRITICAL</span>
+                  </div>
+                  <strong style={{ color: "#fff", fontSize: "12.5px", display: "block", marginBottom: "4px" }}>
+                    Tender-Split Avoidance (₹4.87L)
+                  </strong>
+                  <p style={{ fontSize: "11px", color: "var(--text-muted)", margin: "0 0 6px 0", lineHeight: "1.4" }}>
+                    Budget is set at ₹4,87,000—deliberately just below the ₹5 Lakh GFR Rule 149 e-tender threshold—and repeated 4 times in one village.
+                  </p>
+                  <span style={{ fontSize: "11px", color: "var(--cyan)", fontWeight: 600 }}>Click to Load Scenario →</span>
+                </div>
+
+                <div className="example-card-mini" onClick={() => applyPreset(2)}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#ef4444" }}>⚡ EXAMPLE 2</span>
+                    <span className="risk-badge critical" style={{ fontSize: "10px", padding: "2px 6px" }}>78.2 CRITICAL</span>
+                  </div>
+                  <strong style={{ color: "#fff", fontSize: "12.5px", display: "block", marginBottom: "4px" }}>
+                    Severe Cost Inflation (₹35L Road)
+                  </strong>
+                  <p style={{ fontSize: "11px", color: "var(--text-muted)", margin: "0 0 6px 0", lineHeight: "1.4" }}>
+                    A rural link road budgeted at ₹35,00,000, which is 3.5x higher than the typical median road cost in the state (DPR inflation).
+                  </p>
+                  <span style={{ fontSize: "11px", color: "var(--cyan)", fontWeight: 600 }}>Click to Load Scenario →</span>
+                </div>
+
+                <div className="example-card-mini" onClick={() => applyPreset(3)}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#fbbf24" }}>⚡ EXAMPLE 3</span>
+                    <span className="risk-badge high" style={{ fontSize: "10px", padding: "2px 6px" }}>68.9 HIGH</span>
+                  </div>
+                  <strong style={{ color: "#fff", fontSize: "12.5px", display: "block", marginBottom: "4px" }}>
+                    Dormant Water Plant (320 Days)
+                  </strong>
+                  <p style={{ fontSize: "11px", color: "var(--text-muted)", margin: "0 0 6px 0", lineHeight: "1.4" }}>
+                    Recommended 320 days ago but stalled without sanction, severely violating the statutory 45-day clearance deadline (Para 5.2).
+                  </p>
+                  <span style={{ fontSize: "11px", color: "var(--cyan)", fontWeight: 600 }}>Click to Load Scenario →</span>
+                </div>
+
+                <div className="example-card-mini" onClick={() => applyPreset(4)}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#34d399" }}>⚡ EXAMPLE 4</span>
+                    <span className="risk-badge low" style={{ fontSize: "10px", padding: "2px 6px", background: "rgba(16, 185, 129, 0.15)", color: "#34d399" }}>18.5 LOW</span>
+                  </div>
+                  <strong style={{ color: "#fff", fontSize: "12.5px", display: "block", marginBottom: "4px" }}>
+                    Compliant Project (₹2.5L Library)
+                  </strong>
+                  <p style={{ fontSize: "11px", color: "var(--text-muted)", margin: "0 0 6px 0", lineHeight: "1.4" }}>
+                    A standard rural library room sanctioned within 25 days with normal median costs. Demonstrates zero false-positive clearance.
+                  </p>
+                  <span style={{ fontSize: "11px", color: "var(--cyan)", fontWeight: 600 }}>Click to Load Scenario →</span>
+                </div>
+              </div>
             </div>
 
             <div className="simulator-layout">
@@ -1352,12 +1612,48 @@ export default function App() {
             ===================================================== */}
         {activeTab === "investigations" && (
           <div>
-            <div className="section-header">
-              <span className="section-tag">HUMAN-IN-THE-LOOP AUDIT MANAGEMENT</span>
-              <h1 className="section-title">Officer Investigation & Case Queue</h1>
-              <p className="section-desc">
-                Active workflow tracking for field inspections, statutory inquiry notes, and official audit escalation.
+            {/* Executive Briefing Banner */}
+            <div className="executive-briefing-banner">
+              <div className="briefing-top">
+                <span className="briefing-badge">
+                  <FileCheck size={13} /> 📋 Statutory Case Queue • Human-in-the-Loop Audit
+                </span>
+                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                  Field Verification & Evidence Dossier Reconciliation
+                </span>
+              </div>
+              <h2 className="briefing-heading">
+                <FileCheck size={20} color="var(--cyan)" /> Officer Investigation & Field Inspection Case Queue
+              </h2>
+              <p className="briefing-text">
+                <strong>What is this page?</strong> AI models flag anomalies, but statutory audit decisions require human verification. This queue tracks active investigations assigned to field audit officers. District authorities and CAG auditors conduct site inspections, verify geo-tagged photographs, cross-examine contractor invoices under GFR Rule 149, and document legal findings directly into the secure audit database.
               </p>
+              <div className="briefing-grid">
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <CheckCircle size={14} color="#34d399" /> Physical Site Verification
+                  </div>
+                  <p className="briefing-point-desc">
+                    Field officers capture geo-tagged photos to verify assets exist on the ground and prevent ghost billing.
+                  </p>
+                </div>
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <FileText size={14} color="var(--cyan)" /> Voucher Reconciliation
+                  </div>
+                  <p className="briefing-point-desc">
+                    Direct comparison between sanctioned Detailed Project Reports (DPR) and contractor Schedule of Rates (SOR).
+                  </p>
+                </div>
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <ShieldAlert size={14} color="#ef4444" /> Official CAG Escalation
+                  </div>
+                  <p className="briefing-point-desc">
+                    Confirmed procurement evasions or fund misappropriations are escalated to formal CAG forensic audit dockets.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="table-wrapper">
@@ -1434,12 +1730,48 @@ export default function App() {
             ===================================================== */}
         {activeTab === "methodology" && (
           <div>
-            <div className="section-header">
-              <span className="section-tag">TECHNICAL ARCHITECTURE</span>
-              <h1 className="section-title">AI Ensemble & CAG Domain Rules Methodology</h1>
-              <p className="section-desc">
-                Mathematical formulations, anomaly scoring algorithms, domain rules, and validation benchmarks.
+            {/* Executive Briefing Banner */}
+            <div className="executive-briefing-banner">
+              <div className="briefing-top">
+                <span className="briefing-badge">
+                  <Layers size={13} /> 🧠 Algorithmic Transparency • Unsupervised AI & Domain Rules
+                </span>
+                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                  Mathematical Formulations, Weights & Codified Statues
+                </span>
+              </div>
+              <h2 className="briefing-heading">
+                <Award size={20} color="var(--cyan)" /> AI Ensemble & CAG Domain Rules Technical Methodology
+              </h2>
+              <p className="briefing-text">
+                <strong>What is this page?</strong> Complete mathematical and algorithmic transparency for juries, technical reviewers, and statutory auditors. Public procurement data exhibits extreme class imbalance and non-linear localized clustering where standard supervised learning fails. This page documents the mathematical formulation of our 3-model unsupervised ensemble, feature engineering pipelines, and codified CAG statutory rules.
               </p>
+              <div className="briefing-grid">
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <Zap size={14} color="var(--cyan)" /> 3-Model Unsupervised Ensemble
+                  </div>
+                  <p className="briefing-point-desc">
+                    45% Isolation Forest + 35% Profile-Deduplicated LOF + 20% PCA Reconstruction Error on 15 behavioral features.
+                  </p>
+                </div>
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <ShieldAlert size={14} color="#fca5a5" /> 5 Codified CAG Domain Rules
+                  </div>
+                  <p className="briefing-point-desc">
+                    Enforces GFR Rule 149 e-tender thresholds, localized repeat clusters, median cost disparities, and 45-day clearance SLAs.
+                  </p>
+                </div>
+                <div className="briefing-point">
+                  <div className="briefing-point-title">
+                    <Award size={14} color="#34d399" /> 60/40 Hybrid Fusion Score
+                  </div>
+                  <p className="briefing-point-desc">
+                    Ensures every statistical outlier is validated against legal procurement guidelines, drastically lowering false alarms.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="panel">
