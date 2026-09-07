@@ -85,6 +85,42 @@ export function getBilingualExplanation(work) {
     });
   }
 
+  // 5. Fiscal Year-End "March Rush" Anomaly
+  if (work.is_march_rush) {
+    englishPoints.push({
+      title: "Fiscal Year-End 'March Rush' Anomaly",
+      desc: `Recommended in March to rapidly exhaust expiring unspent balances before the financial year closes on March 31. CAG audits heavily flag March Rush allocations for hurried approvals and bypassed DPR scrutiny.`
+    });
+    hindiPoints.push({
+      title: "वित्तीय वर्ष के अंत की जल्दबाजी (March Rush)",
+      desc: `वित्तीय वर्ष समाप्त (31 मार्च) होने से ठीक पहले लैप्स होने वाले फंड को आनन-फानन में ठिकाने लगाने के लिए मार्च में सिफारिश की गई। कैग (CAG) ऑडिट ऐसे मार्च रश मामलों को जल्दबाजी में बिना उचित जांच के की गई गड़बड़ी मानता है।`
+    });
+  }
+
+  // 6. Chronic Multi-Year Dormancy (>3 Years Stalled)
+  if (work.is_chronic_dormancy) {
+    englishPoints.push({
+      title: "Chronic Multi-Year Dormancy (>3 Years Stalled)",
+      desc: `This work was recommended between 2019–2021 and has remained unsanctioned or incomplete for over 3 to 5 years, representing a severe statutory SLA breach and potential abandoned/ghost asset.`
+    });
+    hindiPoints.push({
+      title: "दीर्घकालिक लापरवाही (3+ वर्ष से लंबित कार्य)",
+      desc: `यह कार्य 2019-2021 के बीच अनुशंसित हुआ था और 3 से 5 साल से अधिक समय से बिना स्वीकृति या अधूरा पड़ा है। यह नियमों का गंभीर उल्लंघन और कागजी घोषणाओं के बाद परियोजना को भुला दिए जाने का प्रमाण है।`
+    });
+  }
+
+  // 7. Electoral Cycle Spending Surge
+  if (work.is_election_surge) {
+    englishPoints.push({
+      title: "Election Year Transition Surge (2019 / 2024)",
+      desc: `Sanctioned during the general election sunset window when MPs typically accelerate allocations before the Model Code of Conduct (MCC) takes effect.`
+    });
+    hindiPoints.push({
+      title: "चुनावी वर्ष की असामान्य तेजी (2019 / 2024)",
+      desc: `लोकसभा चुनाव से ठीक पहले आचार संहिता लागू होने की जल्दबाजी में स्वीकृत कार्य, जहां राजनीतिक लाभ हेतु बिना प्राथमिक सर्वे के थोक में कार्य बांटे जाने का जोखिम होता है।`
+    });
+  }
+
   // Fallback if none of the above
   if (englishPoints.length === 0) {
     englishPoints.push({
@@ -142,6 +178,16 @@ export function getBilingualActions(work) {
   if (isInaction) {
     englishActions.push("Issue statutory inquiry to the District Authority for violating the mandatory 45-day clearance deadline.");
     hindiActions.push("जिला अधिकारी को 45 दिनों में काम मंजूर न करने के संबंध में कारण बताओ नोटिस जारी करें।");
+  }
+
+  if (work.is_march_rush) {
+    englishActions.push("Conduct special CAG fiscal year-end forensic audit to verify DPR due diligence was not bypassed during March Rush.");
+    hindiActions.push("मार्च रश विशेष ऑडिट: जांचें कि क्या वित्तीय वर्ष अंत की जल्दबाजी में बिना तकनीकी जांच के फंड जारी किया गया।");
+  }
+
+  if (work.is_chronic_dormancy) {
+    englishActions.push("Institute administrative inquiry for 3+ year dormancy; recover idle funds to Treasury if work is unviable.");
+    hindiActions.push("3 साल से अधिक समय से अटके कार्यों की जांच कर अप्रयुक्त राशि सरकारी खजाने में वापस जमा करवाएं।");
   }
 
   if (englishActions.length === 0) {

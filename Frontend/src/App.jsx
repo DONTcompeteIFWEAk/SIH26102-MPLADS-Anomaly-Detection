@@ -2,14 +2,15 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
+  AreaChart, Area, ComposedChart, Line
 } from "recharts";
 import {
   ShieldAlert, Database, AlertTriangle, IndianRupee, Clock,
   FileText, Search, Filter, RefreshCw, CheckCircle, AlertCircle,
   TrendingUp, Users, MapPin, Building2, ChevronRight, X,
   Printer, Play, Sliders, ExternalLink, Award, FileCheck, Layers,
-  Scissors, Zap, Compass
+  Scissors, Zap, Compass, Calendar, History, Flame, Clock4
 } from "lucide-react";
 import "./App.css";
 
@@ -17,6 +18,7 @@ import {
   FALLBACK_NATIONAL_STATS,
   FALLBACK_STATE_STATS,
   FALLBACK_CATEGORY_STATS,
+  FALLBACK_TEMPORAL_TRENDS,
   FALLBACK_WORKS,
   FALLBACK_CONSTITUENCIES,
   FALLBACK_INVESTIGATION_QUEUE,
@@ -51,6 +53,7 @@ export default function App() {
   const [nationalStats, setNationalStats] = useState(null);
   const [stateStats, setStateStats] = useState([]);
   const [categoryStats, setCategoryStats] = useState([]);
+  const [temporalTrends, setTemporalTrends] = useState(FALLBACK_TEMPORAL_TRENDS);
 
   // Works Explorer State
   const [worksData, setWorksData] = useState({ items: [], total: 0, page: 1, pages: 1 });
@@ -59,6 +62,8 @@ export default function App() {
   const [selectedState, setSelectedState] = useState("ALL");
   const [selectedRiskLevel, setSelectedRiskLevel] = useState("ALL");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
+  const [selectedYear, setSelectedYear] = useState("ALL");
+  const [selectedTemporalPattern, setSelectedTemporalPattern] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
 
   // Single Work Detail & Investigation Modal
@@ -104,8 +109,13 @@ export default function App() {
   // Direct bridge from GIS Map to Works Explorer
   const handleSelectStateFromMap = (stateName) => {
     setSelectedState(stateName);
+    setSelectedRiskLevel("ALL");
+    setSelectedCategory("ALL");
+    setSelectedYear("ALL");
+    setSelectedTemporalPattern("ALL");
+    setSearchQuery("");
     setActiveTab("explorer");
-    fetchWorks(1, "", stateName, "ALL", "ALL");
+    fetchWorks(1, "", stateName, "ALL", "ALL", "ALL", "ALL");
   };
 
   // =========================================================
@@ -115,7 +125,7 @@ export default function App() {
     loadDashboardData();
   }, []);
 
-  const filterFallbackWorks = (page = 1, search = "", state = "ALL", risk = "ALL", category = "ALL") => {
+  const filterFallbackWorks = (page = 1, search = "", state = "ALL", risk = "ALL", category = "ALL", year = "ALL", temporalPattern = "ALL") => {
     let filtered = [...FALLBACK_WORKS];
     if (search && search.trim()) {
       const q = search.trim().toLowerCase();
@@ -142,6 +152,19 @@ export default function App() {
     }
     if (category && category !== "ALL") {
       filtered = filtered.filter(w => (w.category || "").toLowerCase() === category.toLowerCase());
+    }
+    if (year && year !== "ALL") {
+      const yNum = Number(year);
+      filtered = filtered.filter(w => (w.recommendation_year === yNum) || (w.recommended_date && new Date(w.recommended_date).getFullYear() === yNum));
+    }
+    if (temporalPattern && temporalPattern !== "ALL") {
+      if (temporalPattern === "MARCH_RUSH") {
+        filtered = filtered.filter(w => w.is_march_rush === 1);
+      } else if (temporalPattern === "ELECTION_SURGE") {
+        filtered = filtered.filter(w => w.is_election_surge === 1);
+      } else if (temporalPattern === "CHRONIC_DORMANCY") {
+        filtered = filtered.filter(w => w.is_chronic_dormancy === 1);
+      }
     }
     const limit = 15;
     const total = filtered.length;
@@ -175,21 +198,25 @@ export default function App() {
       setError(null);
 
       const config = { timeout: 2500 };
-      const [natRes, stateRes, catRes, queueRes] = await Promise.all([
+      const [natRes, stateRes, catRes, queueRes, trendsRes] = await Promise.all([
         axios.get(`${API_BASE}/api/analytics/national`, config),
         axios.get(`${API_BASE}/api/analytics/state-wise`, config),
         axios.get(`${API_BASE}/api/analytics/category-wise`, config),
-        axios.get(`${API_BASE}/api/work-investigations/queue`, config)
+        axios.get(`${API_BASE}/api/work-investigations/queue`, config),
+        axios.get(`${API_BASE}/api/analytics/temporal-trends`, config)
       ]);
 
       setNationalStats(natRes.data);
       setStateStats(stateRes.data);
       setCategoryStats(catRes.data);
       setInvestigationQueue(queueRes.data);
+      if (trendsRes.data) {
+        setTemporalTrends(trendsRes.data);
+      }
       setIsCloudDemo(false);
 
       // Load initial works
-      await fetchWorks(1, "", "ALL", "ALL", "ALL", false);
+      await fetchWorks(1, "", "ALL", "ALL", "ALL", "ALL", "ALL", false);
       // Load initial finances
       await fetchConstituencies("", "ALL", false);
 
@@ -200,8 +227,9 @@ export default function App() {
       setStateStats(FALLBACK_STATE_STATS);
       setCategoryStats(FALLBACK_CATEGORY_STATS);
       setInvestigationQueue(FALLBACK_INVESTIGATION_QUEUE);
+      setTemporalTrends(FALLBACK_TEMPORAL_TRENDS);
 
-      filterFallbackWorks(1, "", "ALL", "ALL", "ALL");
+      filterFallbackWorks(1, "", "ALL", "ALL", "ALL", "ALL", "ALL");
       filterFallbackConstituencies("", "ALL");
     } finally {
       setLoading(false);
@@ -209,9 +237,9 @@ export default function App() {
   };
 
   // Fetch Works
-  const fetchWorks = async (page = 1, search = "", state = "ALL", risk = "ALL", category = "ALL", forceDemo = isCloudDemo) => {
+  const fetchWorks = async (page = 1, search = "", state = "ALL", risk = "ALL", category = "ALL", year = "ALL", temporalPattern = "ALL", forceDemo = isCloudDemo) => {
     if (forceDemo) {
-      filterFallbackWorks(page, search, state, risk, category);
+      filterFallbackWorks(page, search, state, risk, category, year, temporalPattern);
       return;
     }
     try {
@@ -222,7 +250,9 @@ export default function App() {
         search: search || undefined,
         state: state !== "ALL" ? state : undefined,
         risk_level: risk !== "ALL" ? risk : undefined,
-        category: category !== "ALL" ? category : undefined
+        category: category !== "ALL" ? category : undefined,
+        year: year !== "ALL" ? Number(year) : undefined,
+        temporal_flag: temporalPattern !== "ALL" ? temporalPattern : undefined
       };
       const res = await axios.get(`${API_BASE}/api/works`, { params, timeout: 3000 });
       setWorksData(res.data);
@@ -230,7 +260,7 @@ export default function App() {
     } catch (err) {
       console.warn("fetchWorks API failed, falling back to client dataset:", err?.message);
       setIsCloudDemo(true);
-      filterFallbackWorks(page, search, state, risk, category);
+      filterFallbackWorks(page, search, state, risk, category, year, temporalPattern);
     } finally {
       setWorksLoading(false);
     }
@@ -370,10 +400,12 @@ export default function App() {
         state: work.state,
         constituency: work.constituency,
         district_authority: work.ida || "District Collector & IDA",
-        recommended_date: work.recommended_date ? String(work.recommended_date).slice(0, 10) : "04-03-2024",
+        recommended_date: work.recommended_date ? String(work.recommended_date).slice(0, 10) : (work.recommendation_year ? `FY ${work.recommendation_year}` : "04-03-2024"),
+        fiscal_year: work.recommendation_year ? `FY ${work.recommendation_year}` : "FY 2024",
         allocation_inr: `Rs. ${Number(work.allocation_amount || 0).toLocaleString("en-IN")}`,
         status: work.status,
-        approval_status: work.ida_approval || "Action Pending"
+        approval_status: work.ida_approval || "Action Pending",
+        temporal_pattern: work.is_march_rush ? "🚨 March Rush (Q4 Fiscal Spike)" : (work.is_chronic_dormancy ? "⏳ Chronic Dormancy (>3 Yrs Stalled)" : (work.is_election_surge ? "🏛️ Pre-Poll Electoral Surge" : "Standard Timeline"))
       },
       risk_assessment: {
         hybrid_risk_score: work.hybrid_risk_score,
@@ -385,7 +417,10 @@ export default function App() {
       flags_detected: {
         tender_splitting_pattern: Boolean(work.split_tender_flag),
         localized_work_clustering: Boolean(work.cluster_work_flag),
-        prolonged_inaction_dormancy: Boolean(work.prolonged_inaction_flag)
+        prolonged_inaction_dormancy: Boolean(work.prolonged_inaction_flag),
+        march_rush_sanction: Boolean(work.is_march_rush),
+        chronic_multiyear_dormancy: Boolean(work.is_chronic_dormancy),
+        election_cycle_surge: Boolean(work.is_election_surge)
       },
       findings_explanation: work.hybrid_risk_explanation,
       recommended_statutory_action: work.recommended_action,
@@ -817,6 +852,109 @@ export default function App() {
               </div>
             </div>
 
+            {/* Multi-Year Temporal Forensics & March Rush Radar */}
+            <div className="panel" style={{ marginTop: "24px" }}>
+              <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                    <span className="badge-pill" style={{ background: "rgba(6, 182, 212, 0.2)", color: "var(--cyan)" }}>
+                      <Calendar size={12} /> 6-Year Longitudinal Timeline (2019–2024)
+                    </span>
+                    <span className="badge-pill" style={{ background: "rgba(239, 68, 68, 0.2)", color: "#f87171" }}>
+                      <Flame size={12} /> March Rush Radar Active
+                    </span>
+                  </div>
+                  <h3 className="panel-title" style={{ fontSize: "17px" }}>
+                    <History size={18} color="var(--cyan)" /> Multi-Year Temporal Forensics & Fiscal Seasonality Dynamics
+                  </h3>
+                  <p className="panel-desc">
+                    Longitudinal benchmarking across 17th & 18th Lok Sabha tenures. Tracks the infamous CAG "March Rush" fiscal year-end spikes, election-year surges, and multi-year dormant assets.
+                  </p>
+                </div>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <button
+                    className="btn-audit-view"
+                    style={{ fontSize: "12px", padding: "6px 14px", borderColor: "rgba(239, 68, 68, 0.4)", color: "#fca5a5" }}
+                    onClick={() => {
+                      setSelectedTemporalPattern("MARCH_RUSH");
+                      setActiveTab("explorer");
+                      fetchWorks(1, "", "ALL", "ALL", "ALL", "ALL", "MARCH_RUSH");
+                    }}
+                  >
+                    <Flame size={13} /> Inspect March Rush (3,111 Works)
+                  </button>
+                  <button
+                    className="btn-audit-view"
+                    style={{ fontSize: "12px", padding: "6px 14px", borderColor: "rgba(168, 85, 247, 0.4)", color: "#c084fc" }}
+                    onClick={() => {
+                      setSelectedTemporalPattern("CHRONIC_DORMANCY");
+                      setActiveTab("explorer");
+                      fetchWorks(1, "", "ALL", "ALL", "ALL", "ALL", "CHRONIC_DORMANCY");
+                    }}
+                  >
+                    <Clock4 size={13} /> Inspect 3+ Yrs Stalled (5,960)
+                  </button>
+                </div>
+              </div>
+
+              {/* 4 Temporal Stat Highlights */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", margin: "16px 0" }}>
+                <div style={{ background: "rgba(239, 68, 68, 0.06)", border: "1px solid rgba(239, 68, 68, 0.2)", borderRadius: "8px", padding: "12px 14px" }}>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase" }}>🚨 Fiscal Year-End March Rush</div>
+                  <div style={{ fontSize: "20px", fontWeight: 800, color: "#f87171", marginTop: "2px" }}>3,111 Works</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>Rapidly allocated in March before fiscal closure</div>
+                </div>
+
+                <div style={{ background: "rgba(168, 85, 247, 0.06)", border: "1px solid rgba(168, 85, 247, 0.2)", borderRadius: "8px", padding: "12px 14px" }}>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase" }}>⏳ Chronic Multi-Year Dormancy</div>
+                  <div style={{ fontSize: "20px", fontWeight: 800, color: "#c084fc", marginTop: "2px" }}>5,960 Works</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>Stalled from 2019–2021 without sanction (&gt;3 yrs)</div>
+                </div>
+
+                <div style={{ background: "rgba(6, 182, 212, 0.06)", border: "1px solid rgba(6, 182, 212, 0.2)", borderRadius: "8px", padding: "12px 14px" }}>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase" }}>🏛️ Election Cycle Surges</div>
+                  <div style={{ fontSize: "20px", fontWeight: 800, color: "var(--cyan)", marginTop: "2px" }}>17,268 Works</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>Concentrated in 2019 & 2024 election windows</div>
+                </div>
+
+                <div style={{ background: "rgba(59, 130, 246, 0.06)", border: "1px solid rgba(59, 130, 246, 0.2)", borderRadius: "8px", padding: "12px 14px" }}>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase" }}>📈 Multi-Year Expenditure Tracked</div>
+                  <div style={{ fontSize: "20px", fontWeight: 800, color: "#93c5fd", marginTop: "2px" }}>₹6,260.61 Cr</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>105,000 works across all 557 parliamentary seats</div>
+                </div>
+              </div>
+
+              {/* Recharts Timeline Visualizer */}
+              <div style={{ width: "100%", height: 300, marginTop: "12px" }}>
+                <ResponsiveContainer>
+                  <ComposedChart data={temporalTrends} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="allocGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="year" stroke="#94a3b8" fontSize={12} />
+                    <YAxis yAxisId="left" stroke="#94a3b8" fontSize={11} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#f87171" fontSize={11} />
+                    <Tooltip
+                      contentStyle={{ background: "#1f2937", borderColor: "#374151", borderRadius: 8, color: "#fff" }}
+                      formatter={(val, name) => {
+                        if (name === "Allocation (₹ Cr)") return [`₹${Number(val).toLocaleString()} Cr`, name];
+                        return [Number(val).toLocaleString() + " works", name];
+                      }}
+                    />
+                    <Legend />
+                    <Area yAxisId="left" type="monotone" dataKey="total_allocation_cr" name="Allocation (₹ Cr)" fill="url(#allocGradient)" stroke="#3b82f6" strokeWidth={2} />
+                    <Line yAxisId="right" type="monotone" dataKey="critical_works" name="Critical Anomalies" stroke="#ef4444" strokeWidth={2} dot={{ r: 4, fill: "#ef4444" }} />
+                    <Line yAxisId="right" type="monotone" dataKey="march_rush_count" name="March Rush Spikes" stroke="#f97316" strokeWidth={2} strokeDasharray="4 4" dot={{ r: 4, fill: "#f97316" }} />
+                    <Line yAxisId="right" type="monotone" dataKey="chronic_dormancy_count" name="Chronic Dormant Works" stroke="#a855f7" strokeWidth={2} dot={{ r: 4, fill: "#a855f7" }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
             {/* Quick Actions Callout */}
             <div className="panel" style={{ background: "linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(59, 130, 246, 0.08))", borderColor: "rgba(6, 182, 212, 0.3)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
@@ -833,7 +971,7 @@ export default function App() {
                   <button onClick={() => { setActiveTab("simulator"); }} className="btn-audit-view" style={{ padding: "10px 18px", fontSize: "13px" }}>
                     <Play size={16} /> Open AI Simulator
                   </button>
-                  <button onClick={() => { setSelectedRiskLevel("CRITICAL"); setActiveTab("explorer"); fetchWorks(1, "", "ALL", "CRITICAL", "ALL"); }} className="btn-audit-view" style={{ padding: "10px 18px", fontSize: "13px" }}>
+                  <button onClick={() => { setSelectedRiskLevel("CRITICAL"); setSelectedState("ALL"); setSelectedCategory("ALL"); setSelectedYear("ALL"); setSelectedTemporalPattern("ALL"); setSearchQuery(""); setActiveTab("explorer"); fetchWorks(1, "", "ALL", "CRITICAL", "ALL", "ALL", "ALL"); }} className="btn-audit-view" style={{ padding: "10px 18px", fontSize: "13px" }}>
                     <AlertTriangle size={16} /> View Critical Works
                   </button>
                 </div>
@@ -960,7 +1098,7 @@ export default function App() {
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      fetchWorks(1, searchQuery, selectedState, selectedRiskLevel, selectedCategory);
+                      fetchWorks(1, searchQuery, selectedState, selectedRiskLevel, selectedCategory, selectedYear, selectedTemporalPattern);
                     }
                   }}
                 />
@@ -971,7 +1109,7 @@ export default function App() {
                 value={selectedRiskLevel}
                 onChange={(e) => {
                   setSelectedRiskLevel(e.target.value);
-                  fetchWorks(1, searchQuery, selectedState, e.target.value, selectedCategory);
+                  fetchWorks(1, searchQuery, selectedState, e.target.value, selectedCategory, selectedYear, selectedTemporalPattern);
                 }}
               >
                 <option value="ALL">All Risk Levels</option>
@@ -986,7 +1124,7 @@ export default function App() {
                 value={selectedState}
                 onChange={(e) => {
                   setSelectedState(e.target.value);
-                  fetchWorks(1, searchQuery, e.target.value, selectedRiskLevel, selectedCategory);
+                  fetchWorks(1, searchQuery, e.target.value, selectedRiskLevel, selectedCategory, selectedYear, selectedTemporalPattern);
                 }}
               >
                 <option value="ALL">All States/UTs</option>
@@ -995,10 +1133,43 @@ export default function App() {
                 ))}
               </select>
 
+              {/* Multi-Year Temporal Dropdown */}
+              <select
+                className="filter-select"
+                value={selectedYear}
+                onChange={(e) => {
+                  setSelectedYear(e.target.value);
+                  fetchWorks(1, searchQuery, selectedState, selectedRiskLevel, selectedCategory, e.target.value, selectedTemporalPattern);
+                }}
+              >
+                <option value="ALL">All Years (2019–2024)</option>
+                <option value="2024">2024 (18th LS Transition)</option>
+                <option value="2023">2023 (Pre-Election Peak)</option>
+                <option value="2022">2022 (Mid-Tenure)</option>
+                <option value="2021">2021 (Mid-Tenure)</option>
+                <option value="2020">2020 (Mid-Tenure)</option>
+                <option value="2019">2019 (17th LS Election)</option>
+              </select>
+
+              {/* Temporal Anomaly Pattern Dropdown */}
+              <select
+                className="filter-select"
+                value={selectedTemporalPattern}
+                onChange={(e) => {
+                  setSelectedTemporalPattern(e.target.value);
+                  fetchWorks(1, searchQuery, selectedState, selectedRiskLevel, selectedCategory, selectedYear, e.target.value);
+                }}
+              >
+                <option value="ALL">All Temporal Patterns</option>
+                <option value="MARCH_RUSH">🚨 March Rush (Fiscal Year-End Flush)</option>
+                <option value="ELECTION_SURGE">🏛️ Election Cycle Surge (2019 / 2024)</option>
+                <option value="CHRONIC_DORMANCY">⏳ Chronic Dormancy (&gt;3 Yrs Stalled)</option>
+              </select>
+
               <button
                 className="btn-simulate"
                 style={{ width: "auto", padding: "8px 18px" }}
-                onClick={() => fetchWorks(1, searchQuery, selectedState, selectedRiskLevel, selectedCategory)}
+                onClick={() => fetchWorks(1, searchQuery, selectedState, selectedRiskLevel, selectedCategory, selectedYear, selectedTemporalPattern)}
               >
                 <Filter size={14} /> Filter
               </button>
@@ -1011,7 +1182,9 @@ export default function App() {
                   setSelectedState("ALL");
                   setSelectedRiskLevel("ALL");
                   setSelectedCategory("ALL");
-                  fetchWorks(1, "", "ALL", "ALL", "ALL");
+                  setSelectedYear("ALL");
+                  setSelectedTemporalPattern("ALL");
+                  fetchWorks(1, "", "ALL", "ALL", "ALL", "ALL", "ALL");
                 }}
               >
                 Reset
@@ -1090,6 +1263,26 @@ export default function App() {
                         </td>
                         <td>
                           <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                            {w.recommendation_year && (
+                              <span className="badge-pill" style={{ background: "rgba(59, 130, 246, 0.15)", color: "#60a5fa", fontWeight: 600 }}>
+                                FY {w.recommendation_year}
+                              </span>
+                            )}
+                            {w.is_march_rush === 1 && (
+                              <span className="badge-pill" style={{ background: "rgba(244, 63, 94, 0.2)", color: "#fb7185", fontWeight: 600 }} title="March Rush: Q4/Year-End fiscal sanction spike under GFR 149 evasion window">
+                                🚨 March Rush
+                              </span>
+                            )}
+                            {w.is_chronic_dormancy === 1 && (
+                              <span className="badge-pill" style={{ background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", fontWeight: 600 }} title="Chronic Dormancy: Stalled > 3 years since recommendation (2019–2021)">
+                                ⏳ 3+ Yrs Stalled
+                              </span>
+                            )}
+                            {w.is_election_surge === 1 && (
+                              <span className="badge-pill" style={{ background: "rgba(16, 185, 129, 0.2)", color: "#34d399", fontWeight: 600 }} title="Election Surge: Pre-poll electoral recommendation window">
+                                🏛️ Pre-Poll Surge
+                              </span>
+                            )}
                             {w.split_tender_flag === 1 && (
                               <span className="badge-pill" style={{ background: "rgba(249, 115, 22, 0.2)", color: "#fb923c" }} title="Priced in tender-split window under statutory threshold">
                                 Split Tender
@@ -1105,7 +1298,7 @@ export default function App() {
                                 Inaction
                               </span>
                             )}
-                            {w.split_tender_flag === 0 && w.cluster_work_flag === 0 && w.prolonged_inaction_flag === 0 && (
+                            {w.is_march_rush !== 1 && w.is_chronic_dormancy !== 1 && w.is_election_surge !== 1 && w.split_tender_flag === 0 && w.cluster_work_flag === 0 && w.prolonged_inaction_flag === 0 && (
                               <span style={{ color: "var(--text-muted)", fontSize: "11px" }}>Standard</span>
                             )}
                           </div>
@@ -1133,7 +1326,7 @@ export default function App() {
               <div style={{ display: "flex", gap: "8px" }}>
                 <button
                   disabled={currentPage <= 1 || worksLoading}
-                  onClick={() => fetchWorks(currentPage - 1, searchQuery, selectedState, selectedRiskLevel, selectedCategory)}
+                  onClick={() => fetchWorks(currentPage - 1, searchQuery, selectedState, selectedRiskLevel, selectedCategory, selectedYear, selectedTemporalPattern)}
                   className="btn-audit-view"
                   style={{ opacity: currentPage <= 1 ? 0.5 : 1 }}
                 >
@@ -1141,7 +1334,7 @@ export default function App() {
                 </button>
                 <button
                   disabled={currentPage >= worksData.pages || worksLoading}
-                  onClick={() => fetchWorks(currentPage + 1, searchQuery, selectedState, selectedRiskLevel, selectedCategory)}
+                  onClick={() => fetchWorks(currentPage + 1, searchQuery, selectedState, selectedRiskLevel, selectedCategory, selectedYear, selectedTemporalPattern)}
                   className="btn-audit-view"
                   style={{ opacity: currentPage >= worksData.pages ? 0.5 : 1 }}
                 >
@@ -1967,8 +2160,8 @@ export default function App() {
                 </span>
               </div>
 
-              {/* Administrative Details */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
+              {/* Administrative & Temporal Details */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px", marginBottom: "20px" }}>
                 <div style={{ background: "rgba(255,255,255,0.02)", padding: "14px", borderRadius: "8px", border: "1px solid var(--border-subtle)" }}>
                   <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>Work Title / Description</span>
                   <div style={{ fontWeight: 600, marginTop: "4px", fontSize: "14px" }}>{selectedWork.work || "—"}</div>
@@ -1977,6 +2170,40 @@ export default function App() {
                   <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>Allocation Amount</span>
                   <div style={{ fontWeight: 700, marginTop: "4px", fontSize: "18px", color: "var(--cyan)" }}>
                     ₹{Number(selectedWork.allocation_amount || 0).toLocaleString("en-IN")}
+                  </div>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.02)", padding: "14px", borderRadius: "8px", border: "1px solid var(--border-subtle)" }}>
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>Fiscal Year & Timeline</span>
+                  <div style={{ fontWeight: 600, marginTop: "4px", fontSize: "14px", color: "#93c5fd" }}>
+                    FY {selectedWork.recommendation_year || (selectedWork.recommended_date ? String(selectedWork.recommended_date).slice(0, 4) : "2024")}
+                    <span style={{ fontSize: "12px", color: "var(--text-secondary)", display: "block", marginTop: "2px" }}>
+                      Recommended: {selectedWork.recommended_date ? String(selectedWork.recommended_date).slice(0, 10) : "04-03-2024"}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.02)", padding: "14px", borderRadius: "8px", border: "1px solid var(--border-subtle)" }}>
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>Temporal Anomaly Classification</span>
+                  <div style={{ marginTop: "6px", display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                    {selectedWork.is_march_rush === 1 && (
+                      <span className="badge-pill" style={{ background: "rgba(244, 63, 94, 0.2)", color: "#fb7185", fontWeight: 700 }}>
+                        🚨 March Rush (Q4 Fiscal Flush)
+                      </span>
+                    )}
+                    {selectedWork.is_chronic_dormancy === 1 && (
+                      <span className="badge-pill" style={{ background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", fontWeight: 700 }}>
+                        ⏳ Chronic Dormancy (&gt;3 Yrs Stalled)
+                      </span>
+                    )}
+                    {selectedWork.is_election_surge === 1 && (
+                      <span className="badge-pill" style={{ background: "rgba(16, 185, 129, 0.2)", color: "#34d399", fontWeight: 700 }}>
+                        🏛️ Pre-Poll Electoral Surge
+                      </span>
+                    )}
+                    {selectedWork.is_march_rush !== 1 && selectedWork.is_chronic_dormancy !== 1 && selectedWork.is_election_surge !== 1 && (
+                      <span className="badge-pill" style={{ background: "rgba(255, 255, 255, 0.08)", color: "var(--text-secondary)" }}>
+                        Standard Timeline
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -2188,8 +2415,15 @@ export default function App() {
                       <td colSpan="3">{dossierData.work_details.description}</td>
                     </tr>
                     <tr>
-                      <th>Recommended Date:</th>
-                      <td>{dossierData.work_details.recommended_date}</td>
+                      <th>Fiscal Timeline:</th>
+                      <td>
+                        {dossierData.work_details.recommended_date}
+                        {dossierData.work_details.temporal_pattern && (
+                          <span style={{ display: "block", fontSize: "10px", color: "#b91c1c", fontWeight: 700, marginTop: "2px" }}>
+                            {dossierData.work_details.temporal_pattern}
+                          </span>
+                        )}
+                      </td>
                       <th>Status:</th>
                       <td>{dossierData.work_details.status}</td>
                     </tr>
