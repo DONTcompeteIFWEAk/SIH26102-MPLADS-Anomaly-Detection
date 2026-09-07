@@ -1,0 +1,7 @@
+requirements.txt
+*.py
+ml/
+models/
+data/
+venv/
+SIH26102_MPLADS_Explanation_and_Judge_Guide.md
