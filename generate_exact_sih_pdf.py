@@ -2,13 +2,14 @@ import os
 import subprocess
 
 html_path = r"c:\Users\aksha\Desktop\SIH26102\sih_exact_presentation_slides.html"
-pdf_path = r"c:\Users\aksha\Desktop\SIH26102\SIH2026_IDEA_Presentation_SIH26102.pdf"
+pdf_path_t106 = r"c:\Users\aksha\Desktop\SIH26102\SIH2026_IDEA_Presentation_SIH26102_T106.pdf"
+pdf_path_main = r"c:\Users\aksha\Desktop\SIH26102\SIH2026_IDEA_Presentation_SIH26102.pdf"
 
 html_content = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>SIH2026 IDEA Presentation Format — SIH26102</title>
+<title>SIH2026 IDEA Presentation Format — Team RunTime Terror (T106)</title>
 <style>
   @page {
     size: 297mm 167mm; /* 16:9 Standard Presentation */
@@ -43,7 +44,7 @@ html_content = """<!DOCTYPE html>
   /* Slide 1 Header */
   .s1-header-title {
     text-align: center;
-    font-size: 24pt;
+    font-size: 26pt;
     font-weight: bold;
     color: #1d4477;
     margin: 2mm 0 2mm 0;
@@ -52,7 +53,7 @@ html_content = """<!DOCTYPE html>
 
   .s1-header-sub {
     text-align: center;
-    font-size: 20pt;
+    font-size: 21pt;
     font-weight: bold;
     color: #000000;
     margin: 0 0 6mm 0;
@@ -66,27 +67,29 @@ html_content = """<!DOCTYPE html>
     align-items: center;
     margin-bottom: 5mm;
     position: relative;
-    height: 22mm;
+    height: 24mm;
   }
 
   .team-oval {
-    width: 28mm;
-    height: 20mm;
-    border: 2px solid #5b3e84;
+    width: 32mm;
+    height: 22mm;
+    border: 2.5px solid #5b3e84;
     border-radius: 50%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    font-size: 9pt;
-    color: #000;
+    font-size: 10pt;
+    font-weight: bold;
+    color: #0f172a;
     line-height: 1.15;
     text-align: center;
     background: #fff;
+    font-family: "Times New Roman", serif;
   }
 
   .slide-title-center {
-    font-size: 22pt;
+    font-size: 24pt;
     font-weight: bold;
     color: #000000;
     text-align: center;
@@ -97,8 +100,9 @@ html_content = """<!DOCTYPE html>
   }
 
   .sih-logo-img {
-    height: 18mm;
+    height: 23mm;
     width: auto;
+    object-fit: contain;
   }
 
   /* Bottom Banner */
@@ -107,31 +111,32 @@ html_content = """<!DOCTYPE html>
     bottom: 0;
     left: 0;
     right: 0;
-    height: 12mm;
+    height: 13mm;
     background: #0f62ac;
     color: #ffffff;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 14mm;
+    padding: 0 16mm;
     font-family: Arial, sans-serif;
   }
 
-  .bottom-template-text {
+  .bottom-team-text {
     flex-grow: 1;
     text-align: center;
-    font-size: 9.5pt;
-    font-weight: 500;
+    font-size: 11.5pt;
+    font-weight: bold;
+    letter-spacing: 0.5px;
   }
 
   .bottom-slide-num {
-    font-size: 11pt;
+    font-size: 12pt;
     font-weight: bold;
   }
 
-  /* Content Elements */
+  /* Content Elements with Enlarged Font */
   .main-heading-blue {
-    font-size: 16pt;
+    font-size: 17pt;
     font-weight: bold;
     color: #1e5a99;
     text-decoration: underline;
@@ -139,49 +144,42 @@ html_content = """<!DOCTYPE html>
     font-family: "Times New Roman", serif;
   }
 
-  .bullet-list {
-    margin: 0;
-    padding-left: 6mm;
-    font-size: 12pt;
-    line-height: 1.5;
-  }
-
-  .bullet-list li {
-    margin-bottom: 2.5mm;
-  }
-
   /* 3 Columns Card for Slide 2 */
   .cards-3-col {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 5mm;
+    gap: 5.5mm;
+    height: 112mm;
   }
 
   .card-box {
     background: #f8fafc;
-    border: 1px solid #cbd5e1;
+    border: 1.2px solid #cbd5e1;
     border-radius: 6px;
-    padding: 3.5mm 4.5mm;
+    padding: 4mm 5mm;
+    display: flex;
+    flex-direction: column;
   }
 
   .card-box h4 {
-    margin: 0 0 2mm 0;
-    font-size: 11pt;
+    margin: 0 0 2.5mm 0;
+    font-size: 12.5pt;
     font-weight: bold;
     color: #1d4477;
     font-family: "Times New Roman", serif;
+    line-height: 1.25;
   }
 
   .card-box p, .card-box li {
-    font-size: 9pt;
-    line-height: 1.4;
+    font-size: 10.5pt;
+    line-height: 1.45;
     color: #1e293b;
-    margin: 0 0 1.5mm 0;
+    margin: 0 0 2.5mm 0;
   }
 
   .card-box ul {
     margin: 0;
-    padding-left: 4mm;
+    padding-left: 4.5mm;
   }
 
   /* Slide 3 Flowchart */
@@ -189,38 +187,40 @@ html_content = """<!DOCTYPE html>
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 4mm;
+    margin-top: 5mm;
+    width: 100%;
   }
 
   .flow-step {
-    width: 48mm;
+    width: 49mm;
     background: #f0f7ff;
-    border: 1.5px solid #0f62ac;
-    border-radius: 6px;
-    padding: 3mm 3mm;
-    height: 52mm;
+    border: 1.8px solid #0f62ac;
+    border-radius: 7px;
+    padding: 3.5mm 3.5mm;
+    height: 60mm;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
   }
 
   .flow-step-title {
-    font-size: 9.5pt;
+    font-size: 11pt;
     font-weight: bold;
     color: #0f62ac;
     text-align: center;
-    border-bottom: 1px solid #bfdbfe;
+    border-bottom: 1.5px solid #bfdbfe;
     padding-bottom: 1.5mm;
-    margin-bottom: 2mm;
+    margin-bottom: 2.5mm;
     font-family: Arial, sans-serif;
   }
 
   .flow-step-body {
-    font-size: 8pt;
-    line-height: 1.35;
+    font-size: 9.5pt;
+    line-height: 1.45;
     color: #0f172a;
     font-family: Arial, sans-serif;
   }
 
   .flow-arrow {
-    font-size: 16pt;
+    font-size: 18pt;
     color: #0f62ac;
     font-weight: bold;
   }
@@ -234,9 +234,9 @@ html_content = """<!DOCTYPE html>
   }
 
   .s1-left-list {
-    width: 60%;
-    font-size: 15pt;
-    line-height: 2.1;
+    width: 62%;
+    font-size: 16pt;
+    line-height: 2.0;
     font-family: "Times New Roman", serif;
   }
 
@@ -245,12 +245,12 @@ html_content = """<!DOCTYPE html>
   }
 
   .s1-right-img {
-    width: 38%;
+    width: 36%;
     text-align: center;
   }
 
   .s1-bulb-img {
-    max-width: 90mm;
+    max-width: 95mm;
     height: auto;
   }
 </style>
@@ -267,7 +267,7 @@ html_content = """<!DOCTYPE html>
         <div class="s1-header-title">SMART INDIA HACKATHON 2026</div>
         <div class="s1-header-sub">TITLE PAGE</div>
       </div>
-      <img src="sih_logo.png" class="sih-logo-img" style="height: 20mm;" />
+      <img src="sih_logo_transparent.png" class="sih-logo-img" />
     </div>
 
     <div class="s1-layout">
@@ -276,13 +276,20 @@ html_content = """<!DOCTYPE html>
         <div>• <strong>Problem Statement Title-</strong> Autonomous Public Fund Anomaly Detection & Temporal Forensics System for MPLADS</div>
         <div>• <strong>Theme-</strong> Smart Governance & Public Financial Systems</div>
         <div>• <strong>PS Category- Software/Hardware</strong> Software</div>
-        <div>• <strong>Team ID-</strong> [Team ID]</div>
-        <div>• <strong>Team Name (Registered on portal)</strong> [Team Name]</div>
+        <div>• <strong>Team ID-</strong> T106</div>
+        <div>• <strong>Team Name (Registered on portal)-</strong> RunTime Terror</div>
+        <div>• <strong>Team Leader-</strong> Akshat Mittal</div>
+        <div>• <strong>Team Members-</strong> Khushi, Aryan Shahi, Abhay Pratap, Gaurav Shukla, Shreya Srivastava</div>
       </div>
 
       <div class="s1-right-img">
         <img src="sih_bulb_center.png" class="s1-bulb-img" />
       </div>
+    </div>
+
+    <div class="bottom-banner">
+      <div class="bottom-team-text">Team ID: T106  |  Team Name: RunTime Terror</div>
+      <div class="bottom-slide-num">1</div>
     </div>
   </div>
 
@@ -291,9 +298,9 @@ html_content = """<!DOCTYPE html>
        ========================================================= -->
   <div class="slide">
     <div class="slide-header">
-      <div class="team-oval">Your<br>Team<br>Name</div>
+      <div class="team-oval">Team<br>RunTime<br>Terror</div>
       <div class="slide-title-center">IDEA TITLE</div>
-      <img src="sih_logo.png" class="sih-logo-img" />
+      <img src="sih_logo_transparent.png" class="sih-logo-img" />
     </div>
 
     <div class="main-heading-blue">❖Proposed Solution (Describe your Idea/Solution/Prototype)</div>
@@ -328,7 +335,7 @@ html_content = """<!DOCTYPE html>
     </div>
 
     <div class="bottom-banner">
-      <div class="bottom-template-text">@SIH Idea submission- Template</div>
+      <div class="bottom-team-text">Team ID: T106  |  Team Name: RunTime Terror</div>
       <div class="bottom-slide-num">2</div>
     </div>
   </div>
@@ -338,23 +345,23 @@ html_content = """<!DOCTYPE html>
        ========================================================= -->
   <div class="slide">
     <div class="slide-header">
-      <div class="team-oval">Your<br>Team<br>Name</div>
+      <div class="team-oval">Team<br>RunTime<br>Terror</div>
       <div class="slide-title-center">TECHNICAL APPROACH</div>
-      <img src="sih_logo.png" class="sih-logo-img" />
+      <img src="sih_logo_transparent.png" class="sih-logo-img" />
     </div>
 
-    <div style="font-size: 13pt; font-weight: bold; margin-bottom: 2mm;">
+    <div style="font-size: 15pt; font-weight: bold; margin-bottom: 2mm;">
       • Technologies to be used (e.g. programming languages, frameworks, hardware)
     </div>
-    <div style="font-size: 10.5pt; line-height: 1.45; color: #1e293b; margin-left: 5mm; margin-bottom: 4mm;">
+    <div style="font-size: 12pt; line-height: 1.5; color: #1e293b; margin-left: 5mm; margin-bottom: 4mm;">
       - <strong>AI / ML Decision Engine:</strong> Scikit-learn (Isolation Forest 300 trees, Profile-Deduplicated LOF, PCA SVD), Joblib, NumPy, Pandas<br>
       - <strong>Backend & APIs:</strong> FastAPI (High-Performance Asynchronous Python 3.12), SQLAlchemy ORM, Pydantic V2 schemas, Uvicorn<br>
       - <strong>Database & Ingestion:</strong> PostgreSQL 16 (105k works, 557 seats), MoSPI e-SAKSHI live CDC scraper (REST API)<br>
       - <strong>Frontend & Geospatial GIS:</strong> React 18, Vite, Leaflet Geospatial GIS, Recharts Data Visualizer (100% Offline Demo Resilient)
     </div>
 
-    <div style="font-size: 13pt; font-weight: bold; margin-bottom: 2mm;">
-      • Methodology and process for implementation (Flow Charts / Images / working prototype)
+    <div style="font-size: 15pt; font-weight: bold; margin-bottom: 2mm;">
+      • Methodology and process for implementation (Flow Charts / Architecture Workflow)
     </div>
 
     <div class="flowchart-container">
@@ -375,7 +382,7 @@ html_content = """<!DOCTYPE html>
           • Relative Median Ratio<br>
           • GFR 149 Proximity Flag<br>
           • Village Cluster Match<br>
-          • Delay Since Rec.
+          • Delay Since Rec. (>180d)
         </div>
       </div>
       <div class="flow-arrow">➔</div>
@@ -407,14 +414,14 @@ html_content = """<!DOCTYPE html>
         <div class="flow-step-body">
           • English + सरल हिंदी<br>
           • Statutory Directives<br>
-          • Printable Dossier<br>
+          • Printable CAG Dossier<br>
           • AI Simulator Sandbox
         </div>
       </div>
     </div>
 
     <div class="bottom-banner">
-      <div class="bottom-template-text">@SIH Idea submission- Template</div>
+      <div class="bottom-team-text">Team ID: T106  |  Team Name: RunTime Terror</div>
       <div class="bottom-slide-num">3</div>
     </div>
   </div>
@@ -424,42 +431,40 @@ html_content = """<!DOCTYPE html>
        ========================================================= -->
   <div class="slide">
     <div class="slide-header">
-      <div class="team-oval">Your<br>Team<br>Name</div>
+      <div class="team-oval">Team<br>RunTime<br>Terror</div>
       <div class="slide-title-center">FEASIBILITY AND VIABILITY</div>
-      <img src="sih_logo.png" class="sih-logo-img" />
+      <img src="sih_logo_transparent.png" class="sih-logo-img" />
     </div>
 
-    <div class="bullet-list" style="list-style: none; padding-left: 0;">
-      <div style="font-size: 14pt; font-weight: bold; margin-bottom: 2mm;">
-        • Analysis of the feasibility of the idea
-      </div>
-      <div style="font-size: 11pt; line-height: 1.45; margin-left: 6mm; margin-bottom: 5mm; color: #1e293b;">
-        - <strong>Data Feasibility:</strong> 100% validated on authentic MoSPI datasets (60,359 baseline works expanded to 105,000 multi-year records spanning 2019-2024 across all 33 States/UTs).<br>
-        - <strong>Technical Scalability:</strong> Sub-second inference (<15ms per work), allowing seamless real-time pre-sanction screening as a plug-in inside e-SAKSHI.<br>
-        - <strong>Zero Extra Burden:</strong> Requires zero additional manual forms from MPs or district officers; extracts existing mandatory data fields.
-      </div>
+    <div style="font-size: 15pt; font-weight: bold; margin-bottom: 2mm;">
+      • Analysis of the feasibility of the idea
+    </div>
+    <div style="font-size: 12pt; line-height: 1.5; margin-left: 6mm; margin-bottom: 5mm; color: #1e293b;">
+      - <strong>Data Feasibility:</strong> 100% validated on authentic MoSPI datasets (60,359 baseline works expanded to 105,000 multi-year records spanning 2019-2024 across all 33 States/UTs).<br>
+      - <strong>Technical Scalability:</strong> Sub-second inference (<15ms per work), allowing seamless real-time pre-sanction screening as a plug-in inside e-SAKSHI.<br>
+      - <strong>Zero Extra Burden:</strong> Requires zero additional manual forms from MPs or district officers; extracts existing mandatory data fields.
+    </div>
 
-      <div style="font-size: 14pt; font-weight: bold; margin-bottom: 2mm;">
-        • Potential challenges and risks
-      </div>
-      <div style="font-size: 11pt; line-height: 1.45; margin-left: 6mm; margin-bottom: 5mm; color: #1e293b;">
-        - <strong>Algorithmic Risk (Zero-Distance KNN Collapse):</strong> Public works have thousands of identical repetitive civil works (handpumps) that distort standard KNN distance calculations.<br>
-        - <strong>Operational Risk (Auditor Adoption):</strong> District vigilance officers reject black-box AI algorithms because they cannot legally justify scores in parliamentary reviews.<br>
-        - <strong>False Positive Risk:</strong> Legitimate mega-projects (e.g. ₹2 Cr trauma center) look like extreme statistical outliers despite being completely genuine.
-      </div>
+    <div style="font-size: 15pt; font-weight: bold; margin-bottom: 2mm;">
+      • Potential challenges and risks
+    </div>
+    <div style="font-size: 12pt; line-height: 1.5; margin-left: 6mm; margin-bottom: 5mm; color: #1e293b;">
+      - <strong>Algorithmic Risk (Zero-Distance KNN Collapse):</strong> Public works have thousands of identical repetitive civil works (handpumps) that distort standard KNN distance calculations.<br>
+      - <strong>Operational Risk (Auditor Adoption):</strong> District vigilance officers reject black-box AI algorithms because they cannot legally justify scores in parliamentary reviews.<br>
+      - <strong>False Positive Risk:</strong> Legitimate mega-projects (e.g. ₹2 Cr trauma center) look like extreme statistical outliers despite being completely genuine.
+    </div>
 
-      <div style="font-size: 14pt; font-weight: bold; margin-bottom: 2mm;">
-        • Strategies for overcoming these challenges
-      </div>
-      <div style="font-size: 11pt; line-height: 1.45; margin-left: 6mm; color: #1e293b;">
-        - <strong>Profile-Deduplicated LOF:</strong> Groups identical civil works profiles into canonical representations before KNN, preserving true neighborhood reachability density.<br>
-        - <strong>Bilingual Plain-Language Diagnostics:</strong> Translates mathematical metrics into plain English and सरल हिंदी with exact statutory CAG citations (GFR 149, Para 5.2).<br>
-        - <strong>Dual-Layer Hybrid Logic & Feedback Loop:</strong> Statutory rules validate legitimate high-budget works; human officer resolutions dynamically calibrate decision thresholds.
-      </div>
+    <div style="font-size: 15pt; font-weight: bold; margin-bottom: 2mm;">
+      • Strategies for overcoming these challenges
+    </div>
+    <div style="font-size: 12pt; line-height: 1.5; margin-left: 6mm; color: #1e293b;">
+      - <strong>Profile-Deduplicated LOF:</strong> Groups identical civil works profiles into canonical representations before KNN, preserving true neighborhood reachability density.<br>
+      - <strong>Bilingual Plain-Language Diagnostics:</strong> Translates mathematical metrics into plain English and सरल हिंदी with exact statutory CAG citations (GFR 149, Para 5.2).<br>
+      - <strong>Dual-Layer Hybrid Logic & Feedback Loop:</strong> Statutory rules validate legitimate high-budget works; human officer resolutions dynamically calibrate decision thresholds.
     </div>
 
     <div class="bottom-banner">
-      <div class="bottom-template-text">@SIH Idea submission- Template</div>
+      <div class="bottom-team-text">Team ID: T106  |  Team Name: RunTime Terror</div>
       <div class="bottom-slide-num">4</div>
     </div>
   </div>
@@ -469,35 +474,33 @@ html_content = """<!DOCTYPE html>
        ========================================================= -->
   <div class="slide">
     <div class="slide-header">
-      <div class="team-oval">Your<br>Team<br>Name</div>
+      <div class="team-oval">Team<br>RunTime<br>Terror</div>
       <div class="slide-title-center">IMPACT AND BENEFITS</div>
-      <img src="sih_logo.png" class="sih-logo-img" />
+      <img src="sih_logo_transparent.png" class="sih-logo-img" />
     </div>
 
-    <div class="bullet-list" style="list-style: none; padding-left: 0;">
-      <div style="font-size: 14pt; font-weight: bold; margin-bottom: 2.5mm;">
-        • Potential impact on the target audience
-      </div>
-      <div style="font-size: 11pt; line-height: 1.5; margin-left: 6mm; margin-bottom: 6mm; color: #1e293b;">
-        - <strong>Ministry of Statistics & Programme Implementation (MoSPI):</strong> Transforms national scheme surveillance from periodic sample autopsies into automated, 100% continuous oversight.<br>
-        - <strong>District Authorities & Implementing District Authorities (IDAs):</strong> Instant pre-sanction gatekeeping prevents illegal tender splitting before vouchers are signed or payments disbursed.<br>
-        - <strong>Comptroller and Auditor General (CAG) & State AGs:</strong> Replaces tedious manual voucher sampling with prioritized, high-probability anomaly dossiers and pre-compiled legal checklists.<br>
-        - <strong>Rural Citizens & Constituents:</strong> Ensures promised community assets (drinking water borewells, school additions, primary health centres) are physically delivered without ghost diversion.
-      </div>
+    <div style="font-size: 15pt; font-weight: bold; margin-bottom: 2mm;">
+      • Potential impact on the target audience
+    </div>
+    <div style="font-size: 11.5pt; line-height: 1.4; margin-left: 6mm; margin-bottom: 4mm; color: #1e293b;">
+      - <strong>Ministry of Statistics & Programme Implementation (MoSPI):</strong> Transforms national scheme surveillance from periodic sample autopsies into automated, 100% continuous oversight.<br>
+      - <strong>District Authorities & Implementing District Authorities (IDAs):</strong> Instant pre-sanction gatekeeping prevents illegal tender splitting before vouchers are signed or payments disbursed.<br>
+      - <strong>Comptroller and Auditor General (CAG) & State AGs:</strong> Replaces tedious manual voucher sampling with prioritized, high-probability anomaly dossiers and pre-compiled legal checklists.<br>
+      - <strong>Rural Citizens & Constituents:</strong> Ensures promised community assets (drinking water borewells, school additions, primary health centres) are physically delivered without ghost diversion.
+    </div>
 
-      <div style="font-size: 14pt; font-weight: bold; margin-bottom: 2.5mm;">
-        • Benefits of the solution (social, economic, environmental, etc.)
-      </div>
-      <div style="font-size: 11pt; line-height: 1.5; margin-left: 6mm; color: #1e293b;">
-        - <strong>Economic Benefits:</strong> Screens ₹4,000+ Cr annual scheme flow. Caught ₹432.5 Cr in high-risk works and ₹287 Cr in frozen capital. Estimated <strong>₹100–₹200 Crore annual taxpayer savings</strong>.<br>
-        - <strong>Social & Governance Benefits:</strong> Eliminates political patronage cartels; builds citizen trust through transparent, public-facing constituency spending scorecards.<br>
-        - <strong>Operational & Time Efficiency:</strong> Reduces audit lead-time from 12–24 months to under 15 milliseconds, eliminating 95% of manual file-checking drudgery for district collectors.<br>
-        - <strong>Environmental & Infrastructure Integrity:</strong> Fast-tracks pending rural solar electrification, wastewater drainage, and flood protection works delayed by administrative dormancy.
-      </div>
+    <div style="font-size: 15pt; font-weight: bold; margin-bottom: 2mm;">
+      • Benefits of the solution (social, economic, environmental, etc.)
+    </div>
+    <div style="font-size: 11.5pt; line-height: 1.4; margin-left: 6mm; color: #1e293b;">
+      - <strong>Economic Benefits:</strong> Screens ₹4,000+ Cr annual scheme flow. Caught ₹432.5 Cr in high-risk works and ₹287 Cr in frozen capital. Estimated <strong>₹100–₹200 Crore annual taxpayer savings</strong>.<br>
+      - <strong>Social & Governance Benefits:</strong> Eliminates political patronage cartels; builds citizen trust through transparent, public-facing constituency spending scorecards.<br>
+      - <strong>Operational & Time Efficiency:</strong> Reduces audit lead-time from 12–24 months to under 15 milliseconds, eliminating 95% of manual file-checking drudgery for district collectors.<br>
+      - <strong>Environmental & Infrastructure Integrity:</strong> Fast-tracks pending rural solar electrification, wastewater drainage, and flood protection works delayed by administrative dormancy.
     </div>
 
     <div class="bottom-banner">
-      <div class="bottom-template-text">@SIH Idea submission- Template</div>
+      <div class="bottom-team-text">Team ID: T106  |  Team Name: RunTime Terror</div>
       <div class="bottom-slide-num">5</div>
     </div>
   </div>
@@ -507,67 +510,67 @@ html_content = """<!DOCTYPE html>
        ========================================================= -->
   <div class="slide">
     <div class="slide-header">
-      <div class="team-oval">Your<br>Team<br>Name</div>
+      <div class="team-oval">Team<br>RunTime<br>Terror</div>
       <div class="slide-title-center">RESEARCH AND REFERENCES</div>
-      <img src="sih_logo.png" class="sih-logo-img" />
+      <img src="sih_logo_transparent.png" class="sih-logo-img" />
     </div>
 
-    <div style="font-size: 14pt; font-weight: bold; margin-bottom: 4mm;">
+    <div style="font-size: 16pt; font-weight: bold; margin-bottom: 4mm;">
       • Details / Links of the references and research work
     </div>
 
     <div style="display: flex; flex-direction: column; gap: 3.5mm;">
       <div class="card-box" style="padding: 2.5mm 4mm;">
-        <strong style="color: #1d4477; font-size: 10.5pt;">1. Ministry of Statistics and Programme Implementation (MoSPI), Government of India</strong><br>
-        <span style="font-size: 9pt; color: #334155;">Guidelines on Member of Parliament Local Area Development Scheme (MPLADS) — Statutory provisions on Para 3.12 (Tender procedures), Para 5.2 (45-Day Sanction SLA), and Para 2.11 (Permissible works). URL: mplads.gov.in</span>
+        <strong style="color: #1d4477; font-size: 11pt;">1. Ministry of Statistics and Programme Implementation (MoSPI), Government of India</strong><br>
+        <span style="font-size: 10pt; color: #334155;">Guidelines on Member of Parliament Local Area Development Scheme (MPLADS) — Statutory provisions on Para 3.12 (Tender procedures), Para 5.2 (45-Day Sanction SLA), and Para 2.11 (Permissible works). URL: mplads.gov.in</span>
       </div>
 
       <div class="card-box" style="padding: 2.5mm 4mm;">
-        <strong style="color: #1d4477; font-size: 10.5pt;">2. Office of the Comptroller and Auditor General of India (CAG)</strong><br>
-        <span style="font-size: 9pt; color: #334155;">Performance Audit Report on Member of Parliament Local Area Development Scheme — Reports detailing chronic fund dormancy, contract splitting, March Rush fiscal dumps, and unspent constituency balances. URL: cag.gov.in</span>
+        <strong style="color: #1d4477; font-size: 11pt;">2. Office of the Comptroller and Auditor General of India (CAG)</strong><br>
+        <span style="font-size: 10pt; color: #334155;">Performance Audit Report on Member of Parliament Local Area Development Scheme — Reports detailing chronic fund dormancy, contract splitting, March Rush fiscal dumps, and unspent constituency balances. URL: cag.gov.in</span>
       </div>
 
       <div class="card-box" style="padding: 2.5mm 4mm;">
-        <strong style="color: #1d4477; font-size: 10.5pt;">3. Ministry of Finance, Department of Expenditure, Government of India</strong><br>
-        <span style="font-size: 9pt; color: #334155;">General Financial Rules (GFR 2017) — Rule 149 governing mandatory procurement of goods & services through Government e-Marketplace (GeM) and statutory e-tendering thresholds (₹5 Lakh / ₹10 Lakh).</span>
+        <strong style="color: #1d4477; font-size: 11pt;">3. Ministry of Finance, Department of Expenditure, Government of India</strong><br>
+        <span style="font-size: 10pt; color: #334155;">General Financial Rules (GFR 2017) — Rule 149 governing mandatory procurement of goods & services through Government e-Marketplace (GeM) and statutory e-tendering thresholds (₹5 Lakh / ₹10 Lakh).</span>
       </div>
 
       <div class="card-box" style="padding: 2.5mm 4mm;">
-        <strong style="color: #1d4477; font-size: 10.5pt;">4. Liu, F. T., Ting, K. M., & Zhou, Z. H. (IEEE ICDM)</strong><br>
-        <span style="font-size: 9pt; color: #334155;">'Isolation Forest' — Foundations of unsupervised isolation tree algorithms for multi-dimensional anomaly detection without normality assumptions. IEEE International Conference on Data Mining.</span>
+        <strong style="color: #1d4477; font-size: 11pt;">4. Liu, F. T., Ting, K. M., & Zhou, Z. H. (IEEE ICDM)</strong><br>
+        <span style="font-size: 10pt; color: #334155;">'Isolation Forest' — Foundations of unsupervised isolation tree algorithms for multi-dimensional anomaly detection without normality assumptions. IEEE International Conference on Data Mining.</span>
       </div>
 
       <div class="card-box" style="padding: 2.5mm 4mm;">
-        <strong style="color: #1d4477; font-size: 10.5pt;">5. Breunig, M. M., Kriegel, H. P., Ng, R. T., & Sander, J. (ACM SIGMOD)</strong><br>
-        <span style="font-size: 9pt; color: #334155;">'LOF: Identifying Density-Based Local Outliers' — Formulations of Local Outlier Factor and local reachability density metrics in spatial data structures.</span>
+        <strong style="color: #1d4477; font-size: 11pt;">5. Breunig, M. M., Kriegel, H. P., Ng, R. T., & Sander, J. (ACM SIGMOD)</strong><br>
+        <span style="font-size: 10pt; color: #334155;">'LOF: Identifying Density-Based Local Outliers' — Formulations of Local Outlier Factor and local reachability density metrics in spatial data structures.</span>
       </div>
 
       <div class="card-box" style="padding: 2.5mm 4mm;">
-        <strong style="color: #1d4477; font-size: 10.5pt;">6. Open Government Data (OGD) Platform India (data.gov.in)</strong><br>
-        <span style="font-size: 9pt; color: #334155;">Authenticated datasets on MPLADS physical progress, financial release vs expenditure, and constituency-wise project archives (2019–2024).</span>
+        <strong style="color: #1d4477; font-size: 11pt;">6. Open Government Data (OGD) Platform India (data.gov.in)</strong><br>
+        <span style="font-size: 10pt; color: #334155;">Authenticated datasets on MPLADS physical progress, financial release vs expenditure, and constituency-wise project archives (2019–2024).</span>
       </div>
     </div>
 
     <div class="bottom-banner">
-      <div class="bottom-template-text">@SIH Idea submission- Template</div>
+      <div class="bottom-team-text">Team ID: T106  |  Team Name: RunTime Terror</div>
       <div class="bottom-slide-num">6</div>
     </div>
   </div>
 
   <!-- =========================================================
-       SLIDE 7: WORKING PROTOTYPE & TEAM DETAILS
+       SLIDE 7: WORKING PROTOTYPE & TEAM
        ========================================================= -->
   <div class="slide">
     <div class="slide-header">
-      <div class="team-oval">Your<br>Team<br>Name</div>
+      <div class="team-oval">Team<br>RunTime<br>Terror</div>
       <div class="slide-title-center">WORKING PROTOTYPE & TEAM</div>
-      <img src="sih_logo.png" class="sih-logo-img" />
+      <img src="sih_logo_transparent.png" class="sih-logo-img" />
     </div>
 
-    <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 6mm;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6mm;">
       <div class="card-box">
-        <h4>🖥️ Live Functional Prototype Modules</h4>
-        <ul>
+        <h4 style="font-size: 13.5pt;">🖥️ Live Functional Prototype Modules</h4>
+        <ul style="font-size: 11pt; line-height: 1.55;">
           <li><strong>Geospatial GIS Anomaly Heatmap:</strong> Interactive Leaflet India map rendering risk intensity across all 33 States/UTs with constituency drill-downs.</li>
           <li><strong>Works Anomaly Explorer (105k):</strong> Full-text searchable, paginated table with real-time ML vs CAG score comparisons and multi-year temporal filtering (2019-2024).</li>
           <li><strong>Live AI Audit Simulator:</strong> Interactive 'What-If' sandbox allowing evaluators to adjust project budget, delay, and village duplication to test ML risk recalculation live.</li>
@@ -577,26 +580,26 @@ html_content = """<!DOCTYPE html>
       </div>
 
       <div class="card-box">
-        <h4>👥 Team Members & Project Responsibilities</h4>
-        <ul>
-          <li><strong>Team Leader:</strong> [Leader Name]<br><span style="font-size: 8pt; color:#64748b;">Lead AI/ML Architect & Backend Engine (FastAPI)</span></li>
-          <li><strong>Member 2:</strong> [Member Name]<br><span style="font-size: 8pt; color:#64748b;">Data Pipeline, Cleaning & MoSPI Scraper (Python)</span></li>
-          <li><strong>Member 3:</strong> [Member Name]<br><span style="font-size: 8pt; color:#64748b;">Frontend Architecture, React 18 & Recharts Visualizer</span></li>
-          <li><strong>Member 4:</strong> [Member Name]<br><span style="font-size: 8pt; color:#64748b;">Geospatial GIS Mapping Specialist (Leaflet API)</span></li>
-          <li><strong>Member 5:</strong> [Member Name]<br><span style="font-size: 8pt; color:#64748b;">CAG Statutory Rules & GFR Domain Compliance</span></li>
-          <li><strong>Member 6 / Mentor:</strong> [Mentor / Name]<br><span style="font-size: 8pt; color:#64748b;">Quality Assurance, Audit Testing & Evaluation</span></li>
+        <h4 style="font-size: 13.5pt;">👥 Team Members & Project Responsibilities</h4>
+        <ul style="font-size: 11pt; line-height: 1.6;">
+          <li><strong>Team Leader:</strong> Akshat Mittal<br><span style="font-size: 9.5pt; color:#475569;">Lead AI/ML Architect & Backend Engine (FastAPI)</span></li>
+          <li><strong>Member 2:</strong> Khushi<br><span style="font-size: 9.5pt; color:#475569;">Data Pipeline, Cleaning & MoSPI Scraper (Python)</span></li>
+          <li><strong>Member 3:</strong> Aryan Shahi<br><span style="font-size: 9.5pt; color:#475569;">Frontend Architecture, React 18 & Recharts Visualizer</span></li>
+          <li><strong>Member 4:</strong> Abhay Pratap<br><span style="font-size: 9.5pt; color:#475569;">Geospatial GIS Mapping Specialist (Leaflet API)</span></li>
+          <li><strong>Member 5:</strong> Gaurav Shukla<br><span style="font-size: 9.5pt; color:#475569;">CAG Statutory Rules & GFR Domain Compliance</span></li>
+          <li><strong>Member 6:</strong> Shreya Srivastava<br><span style="font-size: 9.5pt; color:#475569;">Quality Assurance, Audit Testing & Evaluation Lead</span></li>
         </ul>
       </div>
     </div>
 
-    <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 2.5mm 4mm; margin-top: 4mm; text-align: center;">
-      <strong style="color: #166534; font-size: 10pt;">
+    <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 6px; padding: 2.5mm 4mm; margin-top: 3.5mm; text-align: center;">
+      <strong style="color: #166534; font-size: 11pt;">
         🎯 READY FOR NATIONAL DEPLOYMENT • TESTED ON 105,000 REAL MOSPI WORKS ACROSS ALL 33 STATES/UTS
       </strong>
     </div>
 
     <div class="bottom-banner">
-      <div class="bottom-template-text">@SIH Idea submission- Template</div>
+      <div class="bottom-team-text">Team ID: T106  |  Team Name: RunTime Terror</div>
       <div class="bottom-slide-num">7</div>
     </div>
   </div>
@@ -611,19 +614,35 @@ with open(html_path, "w", encoding="utf-8") as f:
 print(f"Wrote exact presentation HTML to {html_path}")
 
 chrome = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-cmd = [
+
+# Generate T106 PDF
+cmd_t106 = [
     chrome,
     "--headless",
     "--disable-gpu",
     "--no-pdf-header-footer",
-    f"--print-to-pdf={pdf_path}",
+    f"--print-to-pdf={pdf_path_t106}",
     html_path
 ]
 
-print("Executing Chrome headless PDF print for Exact SIH Presentation Deck...")
-res = subprocess.run(cmd, capture_output=True, text=True)
-print("Returncode:", res.returncode)
-if os.path.exists(pdf_path):
-    print(f"SUCCESS: Generated Exact SIH Presentation PDF at {pdf_path} (Size: {os.path.getsize(pdf_path)} bytes)")
-else:
-    print("FAILED to generate presentation PDF")
+print("Executing Chrome headless PDF print for T106 Deck...")
+res1 = subprocess.run(cmd_t106, capture_output=True, text=True)
+print("T106 PDF Returncode:", res1.returncode)
+
+# Also attempt main PDF if not locked
+cmd_main = [
+    chrome,
+    "--headless",
+    "--disable-gpu",
+    "--no-pdf-header-footer",
+    f"--print-to-pdf={pdf_path_main}",
+    html_path
+]
+try:
+    res2 = subprocess.run(cmd_main, capture_output=True, text=True)
+    print("Main PDF Returncode:", res2.returncode)
+except Exception as e:
+    print("Main PDF note:", e)
+
+if os.path.exists(pdf_path_t106):
+    print(f"SUCCESS: Generated Exact SIH Presentation PDF at {pdf_path_t106} (Size: {os.path.getsize(pdf_path_t106)} bytes)")
