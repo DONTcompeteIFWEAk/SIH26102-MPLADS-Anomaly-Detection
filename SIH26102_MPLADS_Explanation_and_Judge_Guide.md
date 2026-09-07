@@ -71,7 +71,7 @@ This tab gives high-level auditors a macro-summary of India's MPLADS implementat
 Designed for high-impact visual demonstration to jury panels:
 
 - **Interactive Leaflet GIS Map**:
-  - Centers on India with high-contrast **CartoDB Dark Matter / Street GIS tiles**.
+  - Centers on India with high-contrast, watermark-free **Esri Dark Gray Canvas / OpenStreetMap / Satellite GIS tiles** (100% free, zero external API keys needed).
   - Maps all **36 States and Union Territories** with exact geographic coordinates.
 - **Pulsating Risk Density Markers**:
   - Marker radius is proportional to the **flagged anomaly count** in each state.
@@ -84,6 +84,7 @@ Designed for high-impact visual demonstration to jury panels:
 - **State Audit Intelligence Drawer**:
   - Clicking any state circle flies the camera directly to that state and opens a forensic side panel.
   - Visual diagnostic progress meters for GFR 149 Tender-Splits, Village Repetition Clusters, and Average Anomaly Score.
+  - **Bilingual State Audit Summary (🇮🇳 राज्य ऑडिट सारांश)**: Clear Hindi explanation of state inspection priority and field voucher reconciliation.
   - **"Inspect All Flagged Works in Explorer" Button**: 1-click bridge that navigates directly to the Works Explorer tab with that state pre-filtered!
 - **View Mode Switcher**:
   - 🚨 *Anomaly Density*: Circle size represents anomaly volume.
@@ -113,12 +114,16 @@ The search engine for auditors to drill down into any of the 105,000 works:
 
 ---
 
-### 4. The "Audit Deep-Dive" Modal & Printable CAG Dossier
+### 4. The "Audit Deep-Dive" Modal & Printable CAG Dossier (Bilingual English + Hindi)
 
 When clicking **"Audit Deep-Dive"** on any work:
 1. **Risk Gauge Banner**: Displays the hybrid score alongside ML score, CAG rule score, and Data Quality score.
-2. **Audit Finding Explanation**: Human-readable explainability factor (e.g., *"Potential tender-splitting detected near ₹5L threshold | Work repeated 4 times in same village | Allocation 3.2x state median"*).
-3. **Recommended Statutory Action**: Directives for auditors (e.g., *"Examine procurement method under GFR Rule 149; Demand geo-tagged photos and completion certificate from IDA"*).
+2. **Audit Finding Explanation (Bilingual)**:
+   - **🔍 Plain English Explanation**: Stripped of bureaucratic jargon so anyone can understand why the work was flagged (e.g. *"Suspicious Budget: deliberately kept just below the ₹5 Lakh e-tendering threshold (GFR Rule 149)..."*).
+   - **🇮🇳 सरल हिंदी में समझें (Audit Finding in Hindi)**: Relatable Hindi explanation for grassroots understanding (e.g. *"ई-टेंडर से बचने की चालाकी: इस काम का बजट ₹4,90,000 रखा गया है जो सरकारी टेंडर सीमा से ठीक थोड़ा कम है..."*).
+3. **Recommended Statutory Action (Bilingual)**:
+   - **📋 Action Required (English)**: Clear procedural directive (e.g. *"Verify procurement method under GFR Rule 149..."*).
+   - **🇮🇳 अनुशंसित कार्रवाई (Recommended Action in Hindi)**: Actionable Hindi directive (e.g. *"खरीद नियमों (GFR 149) की जांच करें कि क्या खुली ई-टेंडरिंग से बचने के लिए बजट जानबूझकर छोटा रखा गया था..."*).
 4. **Human-in-the-Loop Case Management**:
    - Status update: `NEW` $\rightarrow$ `UNDER REVIEW` $\rightarrow$ `SITE INSPECTION SCHEDULED` $\rightarrow$ `AUDIT ESCALATED` $\rightarrow$ `RESOLVED` $\rightarrow$ `FALSE POSITIVE`.
    - Priority selection: `CRITICAL`, `HIGH`, `ROUTINE`.
@@ -126,7 +131,7 @@ When clicking **"Audit Deep-Dive"** on any work:
    - Field verification checklist checkbox.
    - Saves directly to PostgreSQL `work_investigations`.
 5. **"Print Audit Dossier" Button**:
-   - Generates an official, printable **Office of the Comptroller and Auditor General (CAG) Special Audit Screening Report** complete with Dossier ID, timestamp, finding tables, and signature blocks.
+   - Generates an official, printable **Office of the Comptroller and Auditor General (CAG) Special Audit Screening Report** complete with Dossier ID, timestamp, finding tables, bilingual English + Hindi findings, and signature blocks.
 
 ---
 
