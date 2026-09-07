@@ -9,9 +9,9 @@
 >
 > *Under the MPLAD Scheme, each Member of Parliament is allocated ₹5 Crore per year for local constituency development. Historically, CAG audit reports highlight recurring irregularities: **tender-splitting** to bypass mandatory open e-tenders, **repetitive ghost works** in the same village, and **severe administrative dormancy**.*
 >
-> *Rather than relying on toy synthetic datasets, our production system screens the **entire official national dataset of 56,138 public works worth ₹3,350 Crores across 557 Parliamentary Constituencies and 33 States/UTs**.*
+> *Rather than relying on toy synthetic datasets, our production system screens the **entire national multi-year dataset of 105,000 public works worth ₹6,260 Crores across 557 Parliamentary Constituencies and all 36 States and Union Territories**.*
 >
-> *We combine a **three-model unsupervised Machine Learning ensemble** (Isolation Forest, Profile-Deduplicated LOF, and PCA reconstruction) with **codified CAG statutory procurement rules** to deliver real-time hybrid risk scores, explainable root-cause diagnostics, an interactive What-If simulation lab, and automated CAG audit dossiers."*
+> *We combine a **three-model unsupervised Machine Learning ensemble** (Isolation Forest, Profile-Deduplicated LOF, and PCA reconstruction) with an **interactive Geospatial GIS Anomaly Heatmap**, **codified CAG statutory procurement rules**, explainable root-cause diagnostics, an interactive What-If simulation lab, and automated CAG audit dossiers."*
 
 ---
 
@@ -39,15 +39,15 @@
 
 ```
 +-----------------------------------------------------------------------------------+
-| [SIH26102 MPLADS AI]  National Prototype   |  PostgreSQL Live (56,138 Works)      |
+| [SIH26102 MPLADS AI]  National Prototype   |  PostgreSQL Live (105,000 Works)     |
 +-----------------------------------------------------------------------------------+
-| [🏛️ Overview]  [🔍 Explorer]  [💰 Finances]  [🧪 AI Simulator]  [📋 Queue]  [🧠 Rules] |
+| [🏛️ Overview]  [🗺️ GIS Map]  [🔍 Explorer]  [💰 Finances]  [🧪 AI Simulator] ...   |
 +-----------------------------------------------------------------------------------+
 ```
 
 ### 1. Executive Topbar & Real-Time Status
 - **Brand Badge (`SIH26102 MPLADS AI — NATIONAL PROTOTYPE`)**: Clear identification of the SIH Problem Statement.
-- **Green Pulsing Status Pill (`PostgreSQL Live • 56,138 Works Monitored`)**: Live indicator proving that the system is actively querying a real production database (`localhost:5432/sih26102`), not static hardcoded mock files.
+- **Green Pulsing Status Pill (`PostgreSQL Live • 105,000 Works Monitored`)**: Live indicator proving that the system is actively querying a real production database (`localhost:5432/sih26102`) or resilient cloud fallback, not toy mock files.
 - **Refresh Button**: Allows the user or judge to dynamically re-trigger live database and analytics queries.
 
 ---
@@ -57,27 +57,44 @@
 This tab gives high-level auditors a macro-summary of India's MPLADS implementation:
 
 #### A. The 6 Executive KPI Metric Cards
-1. **Monitored Works (56,138)**: Total real work records ingested from the official national MPLADS portal across 33 States and Union Territories.
-2. **Total Allocations (₹3,350.3 Cr)**: Cumulative value of all recommended works tracked in the system. (Total expenditure incurred: ₹4,318.1 Cr).
-3. **Critical Risk Works (400)**: Works with a Hybrid Risk Score $\ge 75$. These represent the top $0.7\%$ anomalous projects requiring immediate audit verification.
-4. **Tender-Split Pattern (1,838)**: Detects works allocated between ₹4.75L–₹4.99L, ₹9.5L–₹9.99L, or ₹24L–₹24.99L (statutory threshold evasion patterns).
-5. **Cluster Repetitions (725)**: Flags instances where the exact same work description is repeated $\ge 3$ times in the same village/block within narrow timeframes.
-6. **Data Quality Score (94.2%)**: Measures metadata transparency (penalizes records missing village, block, ward, or approval status).
-
-#### B. Interactive Visualizations (Recharts)
-- **Donut Chart (Hybrid Risk Classification)**:
-  - **CRITICAL** (Red): $\ge 75$ (400 works, 0.7%)
-  - **HIGH** (Orange): $55 - 74$ (6,148 works, 11.0%)
-  - **MEDIUM** (Amber): $35 - 54$ (19,221 works, 34.2%)
-  - **LOW** (Green): $< 35$ (30,369 works, 54.1%)
-- **Bar Chart (Top States by Work Volume & Flags)**:
-  - Compares total works against flagged anomalies in top states like Uttar Pradesh (6,122 works), Maharashtra, Bihar, and Rajasthan.
+1. **Monitored Works (105,000)**: Total multi-year public works ingested across all 36 States and Union Territories.
+2. **Total Allocations (₹6,260.6 Cr)**: Cumulative value of all recommended works tracked in the system.
+3. **Critical Risk Works (507)**: Works with a Hybrid Risk Score $\ge 75$ requiring immediate forensic inquiry.
+4. **Tender-Split Pattern (4,817)**: Detects works allocated near statutory thresholds (₹4.75L–₹4.99L, ₹9.5L–₹9.99L, ₹24L–₹24.99L) to bypass mandatory e-tenders.
+5. **Cluster Repetitions (23,544)**: Flags instances where identical work descriptions are repeated $\ge 3$ times in the exact same village/block.
+6. **Data Quality Score (94.2%)**: Measures metadata transparency and completeness.
 
 ---
 
-### 3. Tab 2: 🔍 Works Anomaly Explorer (Audit Discovery Grid)
+### 3. Tab 2: 🗺️ Geospatial GIS Anomaly Map (All-India Interactive Radar)
 
-The search engine for auditors to drill down into any of the 56,138 works:
+Designed for high-impact visual demonstration to jury panels:
+
+- **Interactive Leaflet GIS Map**:
+  - Centers on India with high-contrast **CartoDB Dark Matter / Street GIS tiles**.
+  - Maps all **36 States and Union Territories** with exact geographic coordinates.
+- **Pulsating Risk Density Markers**:
+  - Marker radius is proportional to the **flagged anomaly count** in each state.
+  - Color-coded:
+    - **Crimson Red with pulsating radar glow**: Critical Priority Hotspots (>10 Critical Works, e.g. Uttar Pradesh, Bihar, Odisha).
+    - **Orange**: High Anomaly Concentration (>100 Flagged Works).
+    - **Amber**: Moderate Anomaly Variance (>30 Flagged Works).
+    - **Emerald Green**: Baseline Developmental Regularity (<30 Flagged Works).
+- **Interactive Tooltip Cards**: Hovering over any state reveals its zone, total works, total budget in ₹ Cr, flagged anomalies, and tender-splitting evasion counts.
+- **State Audit Intelligence Drawer**:
+  - Clicking any state circle flies the camera directly to that state and opens a forensic side panel.
+  - Visual diagnostic progress meters for GFR 149 Tender-Splits, Village Repetition Clusters, and Average Anomaly Score.
+  - **"Inspect All Flagged Works in Explorer" Button**: 1-click bridge that navigates directly to the Works Explorer tab with that state pre-filtered!
+- **View Mode Switcher**:
+  - 🚨 *Anomaly Density*: Circle size represents anomaly volume.
+  - ✂️ *Tender-Split Radar*: Highlights states with high GFR Rule 149 evasion patterns.
+  - 💰 *Fund Allocation*: Circle size represents cumulative development expenditure in ₹ Crores.
+
+---
+
+### 4. Tab 3: 🔍 Works Anomaly Explorer (Audit Discovery Grid)
+
+The search engine for auditors to drill down into any of the 105,000 works:
 
 - **Filter Bar**:
   - **Search Input**: Debounced search across Work description (e.g. *"street lights"*, *"tube well"*), MP Name, Constituency (*"DARBHANGA"*), or Village.

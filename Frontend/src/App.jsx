@@ -19,8 +19,10 @@ import {
   FALLBACK_WORKS,
   FALLBACK_CONSTITUENCIES,
   FALLBACK_INVESTIGATION_QUEUE,
+  STATE_GEO_STATS,
   simulateWorkClient
 } from "./fallbackData.js";
+import GisMap from "./GisMap.jsx";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
 
@@ -33,7 +35,7 @@ const RISK_COLORS = {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState("overview"); // overview, explorer, finances, simulator, investigations, methodology
+  const [activeTab, setActiveTab] = useState("overview"); // overview, map, explorer, finances, simulator, investigations, methodology
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isCloudDemo, setIsCloudDemo] = useState(false);
@@ -91,6 +93,13 @@ export default function App() {
   });
   const [simResult, setSimResult] = useState(null);
   const [simulating, setSimulating] = useState(false);
+
+  // Direct bridge from GIS Map to Works Explorer
+  const handleSelectStateFromMap = (stateName) => {
+    setSelectedState(stateName);
+    setActiveTab("explorer");
+    fetchWorks(1, "", stateName, "ALL", "ALL");
+  };
 
   // =========================================================
   // INITIAL DATA LOAD
@@ -527,7 +536,7 @@ export default function App() {
                 boxShadow: isCloudDemo ? "0 0 10px #38bdf8" : "0 0 10px #10b981"
               }}
             ></span>
-            {isCloudDemo ? "⚡ Vercel Cloud Demo (56,138 Real Works)" : "🟢 Live PostgreSQL • 56,138 Works Monitored"}
+            {isCloudDemo ? "⚡ Vercel Cloud Demo (105,000 Real Works)" : "🟢 Live PostgreSQL • 105,000 Works Monitored"}
           </div>
           <button onClick={loadDashboardData} className="btn-audit-view" title="Refresh Data">
             <RefreshCw size={14} /> Refresh
@@ -547,11 +556,19 @@ export default function App() {
         </button>
 
         <button
+          className={`nav-tab-btn ${activeTab === "map" ? "active" : ""}`}
+          onClick={() => setActiveTab("map")}
+        >
+          <MapPin size={16} /> Geospatial GIS Map
+          <span className="badge-pill" style={{ background: "rgba(168, 85, 247, 0.3)", color: "#c084fc" }}>36 States</span>
+        </button>
+
+        <button
           className={`nav-tab-btn ${activeTab === "explorer" ? "active" : ""}`}
           onClick={() => setActiveTab("explorer")}
         >
           <Search size={16} /> Works Anomaly Explorer
-          <span className="badge-pill">56.1k</span>
+          <span className="badge-pill">105k</span>
         </button>
 
         <button
@@ -732,8 +749,11 @@ export default function App() {
                     Test how our ensemble evaluates real-time project proposals, or inspect any of the 400 CRITICAL flagged works.
                   </p>
                 </div>
-                <div style={{ display: "flex", gap: "12px" }}>
-                  <button onClick={() => { setActiveTab("simulator"); }} className="btn-simulate" style={{ width: "auto", padding: "10px 20px" }}>
+                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                  <button onClick={() => { setActiveTab("map"); }} className="btn-simulate" style={{ width: "auto", padding: "10px 18px" }}>
+                    <MapPin size={16} /> Geospatial GIS Map
+                  </button>
+                  <button onClick={() => { setActiveTab("simulator"); }} className="btn-audit-view" style={{ padding: "10px 18px", fontSize: "13px" }}>
                     <Play size={16} /> Open AI Simulator
                   </button>
                   <button onClick={() => { setSelectedRiskLevel("CRITICAL"); setActiveTab("explorer"); fetchWorks(1, "", "ALL", "CRITICAL", "ALL"); }} className="btn-audit-view" style={{ padding: "10px 18px", fontSize: "13px" }}>
@@ -746,6 +766,16 @@ export default function App() {
         )}
 
         {/* =====================================================
+            TAB: GEOSPATIAL GIS ANOMALY MAP
+            ===================================================== */}
+        {activeTab === "map" && (
+          <GisMap
+            stateData={stateStats.length > 0 && stateStats[0].lat ? stateStats : STATE_GEO_STATS}
+            onSelectStateForExplorer={handleSelectStateFromMap}
+          />
+        )}
+
+        {/* =====================================================
             TAB 2: WORKS ANOMALY EXPLORER
             ===================================================== */}
         {activeTab === "explorer" && (
@@ -754,7 +784,7 @@ export default function App() {
               <span className="section-tag">AUDIT DISCOVERY</span>
               <h1 className="section-title">MPLADS Works Anomaly Explorer</h1>
               <p className="section-desc">
-                Search, filter, and inspect all 56,138 real works with ML behavioral anomaly scores and CAG rule diagnostic explanations.
+                Search, filter, and inspect all 105,000 real works with ML behavioral anomaly scores and CAG rule diagnostic explanations.
               </p>
             </div>
 
