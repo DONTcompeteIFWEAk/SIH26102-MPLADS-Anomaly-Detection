@@ -277,19 +277,30 @@ def get_works(
 
     if search:
         s_term = f"%{search.strip()}%"
+        s_nospace = f"%{search.strip().replace(' ', '').lower()}%"
         query = query.filter(
             or_(
                 RealWork.work_id.ilike(s_term),
                 RealWork.work.ilike(s_term),
                 RealWork.mp_name.ilike(s_term),
+                RealWork.state.ilike(s_term),
+                func.replace(func.lower(RealWork.state), ' ', '').ilike(s_nospace),
                 RealWork.constituency.ilike(s_term),
+                func.replace(func.lower(RealWork.constituency), ' ', '').ilike(s_nospace),
                 RealWork.village.ilike(s_term),
-                RealWork.block.ilike(s_term)
+                RealWork.block.ilike(s_term),
+                RealWork.category.ilike(s_term)
             )
         )
 
     if state and state != "ALL":
-        query = query.filter(RealWork.state == state)
+        norm_st = state.strip().replace(' ', '').lower()
+        query = query.filter(
+            or_(
+                RealWork.state == state.strip(),
+                func.replace(func.lower(RealWork.state), ' ', '') == norm_st
+            )
+        )
 
     if category and category != "ALL":
         query = query.filter(RealWork.category == category)

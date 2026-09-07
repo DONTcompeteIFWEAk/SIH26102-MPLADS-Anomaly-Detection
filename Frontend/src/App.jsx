@@ -119,23 +119,29 @@ export default function App() {
     let filtered = [...FALLBACK_WORKS];
     if (search && search.trim()) {
       const q = search.trim().toLowerCase();
+      const qNoSpace = q.replace(/\s+/g, "");
       filtered = filtered.filter(w =>
+        (w.state && (w.state.toLowerCase().includes(q) || w.state.toLowerCase().replace(/\s+/g, "").includes(qNoSpace))) ||
         (w.work && w.work.toLowerCase().includes(q)) ||
         (w.mp_name && w.mp_name.toLowerCase().includes(q)) ||
         (w.village && w.village.toLowerCase().includes(q)) ||
         (w.block && w.block.toLowerCase().includes(q)) ||
         (w.constituency && w.constituency.toLowerCase().includes(q)) ||
-        (w.work_id && w.work_id.toLowerCase().includes(q))
+        (w.work_id && w.work_id.toLowerCase().includes(q)) ||
+        (w.category && w.category.toLowerCase().includes(q))
       );
     }
     if (state && state !== "ALL") {
-      filtered = filtered.filter(w => w.state === state);
+      const normState = state.toLowerCase().replace(/\s+/g, "");
+      filtered = filtered.filter(w => 
+        w.state && w.state.toLowerCase().replace(/\s+/g, "") === normState
+      );
     }
     if (risk && risk !== "ALL") {
-      filtered = filtered.filter(w => w.hybrid_risk_level === risk);
+      filtered = filtered.filter(w => (w.hybrid_risk_level || "").toUpperCase() === risk.toUpperCase());
     }
     if (category && category !== "ALL") {
-      filtered = filtered.filter(w => w.category === category);
+      filtered = filtered.filter(w => (w.category || "").toLowerCase() === category.toLowerCase());
     }
     const limit = 15;
     const total = filtered.length;
@@ -150,13 +156,15 @@ export default function App() {
     let filtered = [...FALLBACK_CONSTITUENCIES];
     if (search && search.trim()) {
       const q = search.trim().toLowerCase();
+      const qNoSpace = q.replace(/\s+/g, "");
       filtered = filtered.filter(c =>
+        (c.constituency && (c.constituency.toLowerCase().includes(q) || c.constituency.toLowerCase().replace(/\s+/g, "").includes(qNoSpace))) ||
         (c.mp_name && c.mp_name.toLowerCase().includes(q)) ||
-        (c.constituency && c.constituency.toLowerCase().includes(q))
+        (c.project_id && c.project_id.toLowerCase().includes(q))
       );
     }
     if (risk && risk !== "ALL") {
-      filtered = filtered.filter(c => c.financial_risk_level === risk);
+      filtered = filtered.filter(c => (c.financial_risk_level || "").toUpperCase() === risk.toUpperCase());
     }
     setConstituencies(filtered);
   };
