@@ -37,14 +37,21 @@ export default function GisMap({ stateData = [], onSelectStateForExplorer }) {
       attributionControl: false
     });
 
-    // Add CartoDB Dark Matter or OpenStreetMap tile layer
-    const tileUrl = mapTheme === "dark"
-      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-      : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+    // Helper to get reliable, watermark-free tiles with zero API key requirement
+    const getTileUrl = (theme) => {
+      if (theme === "streets") {
+        return "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+      }
+      if (theme === "satellite") {
+        return "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+      }
+      // Default: Esri World Dark Gray Base (Clean, high-performance dark theme, ZERO API key needed)
+      return "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
+    };
 
-    const tileLayer = L.tileLayer(tileUrl, {
+    const tileLayer = L.tileLayer(getTileUrl(mapTheme), {
       maxZoom: 19,
-      subdomains: "abcd"
+      attribution: "Map data &copy; OpenStreetMap contributors, Esri"
     }).addTo(map);
 
     map.tileLayerInstance = tileLayer;
@@ -66,13 +73,20 @@ export default function GisMap({ stateData = [], onSelectStateForExplorer }) {
     if (!map || !map.tileLayerInstance) return;
 
     map.removeLayer(map.tileLayerInstance);
-    const tileUrl = mapTheme === "dark"
-      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-      : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 
-    const newTileLayer = L.tileLayer(tileUrl, {
+    const getTileUrl = (theme) => {
+      if (theme === "streets") {
+        return "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+      }
+      if (theme === "satellite") {
+        return "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+      }
+      return "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
+    };
+
+    const newTileLayer = L.tileLayer(getTileUrl(mapTheme), {
       maxZoom: 19,
-      subdomains: "abcd"
+      attribution: "Map data &copy; OpenStreetMap contributors, Esri"
     }).addTo(map);
 
     map.tileLayerInstance = newTileLayer;
@@ -268,10 +282,10 @@ export default function GisMap({ stateData = [], onSelectStateForExplorer }) {
             <button
               className="btn-audit-view"
               style={{ padding: "7px 12px", fontSize: "12px" }}
-              onClick={() => setMapTheme(mapTheme === "dark" ? "streets" : "dark")}
-              title="Toggle Dark GIS / Street View Tiles"
+              onClick={() => setMapTheme(mapTheme === "dark" ? "streets" : mapTheme === "streets" ? "satellite" : "dark")}
+              title="Toggle Dark GIS / Street View / Satellite Tiles"
             >
-              <Layers size={14} /> {mapTheme === "dark" ? "Streets" : "Dark GIS"}
+              <Layers size={14} /> {mapTheme === "dark" ? "Dark GIS" : mapTheme === "streets" ? "Streets" : "Satellite"}
             </button>
 
             <button
@@ -367,7 +381,7 @@ export default function GisMap({ stateData = [], onSelectStateForExplorer }) {
               </div>
 
               {/* 4 Key Stat Cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "18px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
                 <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "10px", borderRadius: "8px" }}>
                   <span style={{ fontSize: "11px", color: "var(--text-secondary)", display: "block" }}>Flagged Anomalies</span>
                   <strong style={{ fontSize: "20px", color: "#ef4444" }}>
@@ -397,9 +411,24 @@ export default function GisMap({ stateData = [], onSelectStateForExplorer }) {
                 </div>
               </div>
 
+              {/* Hindi & Easy Explanation Box */}
+              <div style={{ background: "rgba(6, 182, 212, 0.05)", border: "1px solid rgba(6, 182, 212, 0.25)", borderRadius: "8px", padding: "12px", marginBottom: "16px" }}>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--cyan)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>🇮🇳</span> राज्य स्तरीय कैग ऑडिट विश्लेषण (State Audit in Hindi)
+                </div>
+                <p style={{ margin: "0 0 6px 0", fontSize: "12px", color: "var(--text-primary)", lineHeight: "1.5" }}>
+                  <strong>{selectedState.state}</strong> में कुल <strong>{Number(selectedState.flagged_works || 0).toLocaleString()}</strong> विकास कार्य संदिग्ध पाए गए हैं, जिनमें से <strong>{selectedState.critical_works || 0}</strong> कामों में तत्काल ऑन-साइट जांच जरूरी है।
+                </p>
+                <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: "1.4" }}>
+                  {selectedState.split_tenders > 50 && `• ${selectedState.split_tenders} कामों में ई-टेंडर से बचने के लिए बजट को ₹5 लाख से ठीक नीचे रखा गया है। `}
+                  {selectedState.cluster_works > 500 && `• ${selectedState.cluster_works} कामों में एक ही गांव में बार-बार वही काम दिखाकर बिल पास किए गए हैं। `}
+                  जिला प्रशासन को मौके पर जाकर भौतिक सत्यापन (Physical Site Inspection) कराने के निर्देश दिए गए हैं।
+                </div>
+              </div>
+
               {/* Statutory Diagnostic Meters */}
-              <div style={{ marginBottom: "20px" }}>
-                <h4 style={{ fontSize: "12px", textTransform: "uppercase", color: "var(--cyan)", letterSpacing: "0.5px", margin: "0 0 12px 0" }}>
+              <div style={{ marginBottom: "16px" }}>
+                <h4 style={{ fontSize: "12px", textTransform: "uppercase", color: "var(--cyan)", letterSpacing: "0.5px", margin: "0 0 10px 0" }}>
                   Detected Forensic Red Flags
                 </h4>
 
@@ -455,9 +484,17 @@ export default function GisMap({ stateData = [], onSelectStateForExplorer }) {
               </div>
 
               {/* Action Directive */}
-              <div style={{ background: "rgba(255,255,255,0.02)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-subtle)", fontSize: "12px", color: "var(--text-secondary)", marginBottom: "16px" }}>
+              <div style={{ background: "rgba(255,255,255,0.02)", padding: "10px", borderRadius: "8px", border: "1px solid var(--border-subtle)", fontSize: "11px", color: "var(--text-secondary)", marginBottom: "8px" }}>
                 <Info size={14} style={{ display: "inline", marginRight: "6px", color: "var(--cyan)" }} />
                 District Authorities in <strong>{selectedState.state}</strong> have {selectedState.flagged_works} works pending field voucher reconciliation and milestone inspection.
+              </div>
+
+              {/* Hindi State Audit Summary */}
+              <div style={{ background: "rgba(249, 115, 22, 0.08)", padding: "10px 12px", borderRadius: "8px", border: "1px solid rgba(249, 115, 22, 0.25)", fontSize: "11px", color: "#ffedd5", marginBottom: "14px", lineHeight: "1.5" }}>
+                <span style={{ fontWeight: 700, color: "#fdba74", display: "block", marginBottom: "2px" }}>
+                  🇮🇳 राज्य ऑडिट सारांश (State Audit Summary):
+                </span>
+                {selectedState.state} में कुल <strong>{selectedState.flagged_works}</strong> कार्यों में गड़बड़ी के संकेत हैं। अधिकारियों को इनके भौतिक सत्यापन और खर्च बिलों की निष्पक्ष जांच का निर्देश दिया गया है।
               </div>
             </div>
           ) : (

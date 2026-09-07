@@ -23,6 +23,12 @@ import {
   simulateWorkClient
 } from "./fallbackData.js";
 import GisMap from "./GisMap.jsx";
+import {
+  getBilingualExplanation,
+  getBilingualActions,
+  getSimulatorHindiReason,
+  getSimulatorHindiAction
+} from "./bilingualUtils.js";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
 
@@ -374,6 +380,10 @@ export default function App() {
       },
       findings_explanation: work.hybrid_risk_explanation,
       recommended_statutory_action: work.recommended_action,
+      findings_easy_english: getBilingualExplanation(work).easyEnglishSummary,
+      findings_hindi: getBilingualExplanation(work).hindiSummary,
+      action_easy_english: getBilingualActions(work).englishActionSummary,
+      action_hindi: getBilingualActions(work).hindiActionSummary,
       case_status: {
         investigation_status: investigationForm.status || "UNDER REVIEW",
         priority: investigationForm.priority || "HIGH",
@@ -391,7 +401,16 @@ export default function App() {
     }
     try {
       const res = await axios.get(`${API_BASE}/api/audit-dossier/${workId}`, { timeout: 3000 });
-      setDossierData(res.data);
+      const work = FALLBACK_WORKS.find(w => w.work_id === workId) || selectedWork;
+      const bExp = getBilingualExplanation(work || res.data.work_details);
+      const bAct = getBilingualActions(work || res.data.work_details);
+      setDossierData({
+        ...res.data,
+        findings_easy_english: bExp.easyEnglishSummary,
+        findings_hindi: bExp.hindiSummary,
+        action_easy_english: bAct.englishActionSummary,
+        action_hindi: bAct.hindiActionSummary
+      });
       setDossierModalOpen(true);
     } catch (err) {
       console.warn("openDossier API failed, generating client dossier:", err?.message);
@@ -1269,28 +1288,46 @@ export default function App() {
                     </div>
 
                     <div style={{ marginTop: "20px" }}>
-                      <h4 style={{ fontSize: "13px", textTransform: "uppercase", color: "var(--cyan)", letterSpacing: "0.5px", margin: "0 0 10px 0" }}>
-                        Anomaly Drivers Detected:
-                      </h4>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                        <h4 style={{ fontSize: "13px", textTransform: "uppercase", color: "var(--cyan)", letterSpacing: "0.5px", margin: 0 }}>
+                          Anomaly Drivers Detected:
+                        </h4>
+                        <span style={{ fontSize: "11px", color: "var(--cyan)", fontWeight: 700 }}>Bilingual Drivers</span>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                         {simResult.top_reasons.map((r, i) => (
-                          <div key={i} style={{ display: "flex", gap: "8px", fontSize: "13px", color: "var(--text-primary)" }}>
-                            <AlertCircle size={16} color={RISK_COLORS[simResult.risk_level]} style={{ flexShrink: 0, marginTop: "2px" }} />
-                            <span>{r}</span>
+                          <div key={i} style={{ background: "rgba(239, 68, 68, 0.06)", border: "1px solid rgba(239, 68, 68, 0.2)", borderRadius: "8px", padding: "10px 12px" }}>
+                            <div style={{ display: "flex", gap: "8px", fontSize: "13px", color: "var(--text-primary)", fontWeight: 600 }}>
+                              <AlertCircle size={16} color={RISK_COLORS[simResult.risk_level]} style={{ flexShrink: 0, marginTop: "2px" }} />
+                              <span>{r}</span>
+                            </div>
+                            <div style={{ marginTop: "6px", paddingLeft: "24px", fontSize: "12px", color: "#fdba74", display: "flex", alignItems: "flex-start", gap: "6px", lineHeight: "1.4" }}>
+                              <span style={{ flexShrink: 0 }}>🇮🇳</span>
+                              <span>{getSimulatorHindiReason(r)}</span>
+                            </div>
                           </div>
                         ))}
                       </div>
                     </div>
 
                     <div style={{ marginTop: "20px", borderTop: "1px solid var(--border-subtle)", paddingTop: "16px" }}>
-                      <h4 style={{ fontSize: "13px", textTransform: "uppercase", color: "#34d399", letterSpacing: "0.5px", margin: "0 0 10px 0" }}>
-                        Recommended Statutory Actions:
-                      </h4>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                        <h4 style={{ fontSize: "13px", textTransform: "uppercase", color: "#34d399", letterSpacing: "0.5px", margin: 0 }}>
+                          Recommended Statutory Actions:
+                        </h4>
+                        <span style={{ fontSize: "11px", color: "#34d399", fontWeight: 700 }}>Directives</span>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                         {simResult.recommended_actions.map((a, i) => (
-                          <div key={i} style={{ display: "flex", gap: "8px", fontSize: "13px", color: "var(--text-secondary)" }}>
-                            <CheckCircle size={16} color="#34d399" style={{ flexShrink: 0, marginTop: "2px" }} />
-                            <span>{a}</span>
+                          <div key={i} style={{ background: "rgba(16, 185, 129, 0.06)", border: "1px solid rgba(16, 185, 129, 0.2)", borderRadius: "8px", padding: "10px 12px" }}>
+                            <div style={{ display: "flex", gap: "8px", fontSize: "13px", color: "var(--text-secondary)", fontWeight: 500 }}>
+                              <CheckCircle size={16} color="#34d399" style={{ flexShrink: 0, marginTop: "2px" }} />
+                              <span>{a}</span>
+                            </div>
+                            <div style={{ marginTop: "6px", paddingLeft: "24px", fontSize: "12px", color: "#6ee7b7", display: "flex", alignItems: "flex-start", gap: "6px", lineHeight: "1.4" }}>
+                              <span style={{ flexShrink: 0 }}>🇮🇳</span>
+                              <span>{getSimulatorHindiAction(a)}</span>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1482,6 +1519,63 @@ export default function App() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Hindi Explainability Architecture Panel for Judges and Team */}
+              <div style={{ marginTop: "28px", background: "linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(15, 23, 42, 0.8))", border: "1px solid rgba(249, 115, 22, 0.3)", borderRadius: "12px", padding: "24px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+                  <span style={{ fontSize: "24px" }}>🇮🇳</span>
+                  <div>
+                    <h3 style={{ color: "#fdba74", margin: 0, fontSize: "16px" }}>
+                      सरल हिंदी में समझें: यह AI सिस्टम भ्रष्टाचार और वित्तीय गड़बड़ी कैसे पकड़ता है?
+                    </h3>
+                    <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                      आसान हिंदी गाइड (टीम सदस्यों और प्रोजेक्ट मूल्यांकन के लिए)
+                    </span>
+                  </div>
+                </div>
+
+                <p style={{ fontSize: "13px", color: "#fed7aa", lineHeight: "1.6", marginBottom: "16px" }}>
+                  सरकारी विकास कार्यों (MPLADS) में होने वाली वित्तीय विसंगतियों को पकड़ने के लिए यह प्रणाली <strong>3 एडवांस्ड मशीन लर्निंग मॉडल</strong> और <strong>कैग (CAG) के 5 कड़े नियमों</strong> का एक साथ उपयोग करती है:
+                </p>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px", marginBottom: "20px" }}>
+                  <div style={{ background: "rgba(0,0,0,0.3)", padding: "14px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div style={{ color: "#93c5fd", fontWeight: 700, fontSize: "13px", marginBottom: "6px" }}>
+                      🤖 1. मशीन लर्निंग (Isolation Forest & LOF)
+                    </div>
+                    <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: 0, lineHeight: "1.5" }}>
+                      यह AI भारत भर के 1,05,000+ विकास कार्यों के पैटर्न सीखता है। अगर किसी काम का बजट, समयावधि या स्थान सामान्य से असामान्य रूप से भिन्न होता है, तो AI तुरंत उसे अलग छांट देता है।
+                    </p>
+                  </div>
+
+                  <div style={{ background: "rgba(0,0,0,0.3)", padding: "14px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div style={{ color: "#fca5a5", fontWeight: 700, fontSize: "13px", marginBottom: "6px" }}>
+                      ⚖️ 2. टेंडर-विभाजन पकड़ना (GFR Rule 149)
+                    </div>
+                    <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: 0, lineHeight: "1.5" }}>
+                      सरकारी नियम के अनुसार ₹5 लाख या ₹10 लाख से ऊपर खुली बोली (e-tender) जरूरी होती है। भ्रष्ट अधिकारी जानबूझकर ₹4.95 लाख का बजट बनाते हैं ताकि अपने चहेतों को काम दे सकें। AI इसे तुरंत पकड़ लेता है।
+                    </p>
+                  </div>
+
+                  <div style={{ background: "rgba(0,0,0,0.3)", padding: "14px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div style={{ color: "#c4b5fd", fontWeight: 700, fontSize: "13px", marginBottom: "6px" }}>
+                      👻 3. कागजी / फर्जी काम (Ghost Works & Cluster)
+                    </div>
+                    <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: 0, lineHeight: "1.5" }}>
+                      एक ही गांव में बार-बार एक ही तरह का काम दिखाकर अलग-अलग बिल पास करवाने की चाल को यह सिस्टम जीपीएस और नाम के मिलान से तत्काल ब्लॉक कर देता है।
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.25)", padding: "12px 16px", borderRadius: "8px" }}>
+                  <div style={{ color: "#34d399", fontWeight: 700, fontSize: "13px", marginBottom: "4px" }}>
+                    🎯 परिणाम: पूरी तरह निष्पक्ष और पारदर्शी ऑडिट
+                  </div>
+                  <p style={{ fontSize: "12px", color: "#a7f3d0", margin: 0, lineHeight: "1.5" }}>
+                    ऑडिट अधिकारियों को हर संदेहास्पद काम के लिए ठोस कानूनी कारण और मौके पर जांच (Field Inspection) करने के स्पष्ट निर्देश स्वतः मिल जाते हैं।
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1547,20 +1641,72 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Anomaly Diagnosis & Actions */}
-              <div style={{ marginBottom: "20px" }}>
-                <h4 style={{ color: "#fff", fontSize: "14px", margin: "0 0 8px 0" }}>Audit Finding Explanation:</h4>
-                <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "12px 16px", borderRadius: "8px", color: "#f87171", fontSize: "13px" }}>
-                  {selectedWork.hybrid_risk_explanation}
-                </div>
-              </div>
+              {/* Anomaly Diagnosis & Actions with Easy English and Simple Hindi */}
+              {(() => {
+                const bExp = getBilingualExplanation(selectedWork);
+                const bAct = getBilingualActions(selectedWork);
+                return (
+                  <>
+                    <div style={{ marginBottom: "20px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                        <h4 style={{ color: "#fff", fontSize: "14px", margin: 0 }}>Audit Finding Explanation:</h4>
+                        <span style={{ fontSize: "11px", color: "var(--cyan)", fontWeight: 700 }}>Bilingual Diagnostic</span>
+                      </div>
 
-              <div style={{ marginBottom: "24px" }}>
-                <h4 style={{ color: "#fff", fontSize: "14px", margin: "0 0 8px 0" }}>Recommended Statutory Action:</h4>
-                <div style={{ background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.25)", padding: "12px 16px", borderRadius: "8px", color: "#34d399", fontSize: "13px" }}>
-                  {selectedWork.recommended_action}
-                </div>
-              </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        {/* Easy English Explanation Card */}
+                        <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", padding: "12px 16px", borderRadius: "8px" }}>
+                          <div style={{ fontSize: "11px", color: "#93c5fd", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px" }}>
+                            🔍 Plain English Explanation
+                          </div>
+                          <div style={{ color: "#f87171", fontSize: "13px", lineHeight: "1.5" }}>
+                            {bExp.easyEnglishSummary}
+                          </div>
+                        </div>
+
+                        {/* Simple Hindi Explanation Card */}
+                        <div style={{ background: "rgba(249, 115, 22, 0.08)", border: "1px solid rgba(249, 115, 22, 0.25)", padding: "12px 16px", borderRadius: "8px" }}>
+                          <div style={{ fontSize: "11px", color: "#fdba74", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
+                            <span>🇮🇳</span> सरल हिंदी में समझें (Audit Finding in Hindi)
+                          </div>
+                          <div style={{ color: "#ffedd5", fontSize: "13px", lineHeight: "1.6" }}>
+                            {bExp.hindiSummary}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: "24px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                        <h4 style={{ color: "#fff", fontSize: "14px", margin: 0 }}>Recommended Statutory Action:</h4>
+                        <span style={{ fontSize: "11px", color: "#34d399", fontWeight: 700 }}>Mandated Directives</span>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        {/* Easy English Action */}
+                        <div style={{ background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.25)", padding: "12px 16px", borderRadius: "8px" }}>
+                          <div style={{ fontSize: "11px", color: "#6ee7b7", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px" }}>
+                            📋 Action Required (English)
+                          </div>
+                          <div style={{ color: "#34d399", fontSize: "13px", lineHeight: "1.5" }}>
+                            {bAct.englishActionSummary}
+                          </div>
+                        </div>
+
+                        {/* Simple Hindi Action */}
+                        <div style={{ background: "rgba(6, 182, 212, 0.08)", border: "1px solid rgba(6, 182, 212, 0.25)", padding: "12px 16px", borderRadius: "8px" }}>
+                          <div style={{ fontSize: "11px", color: "var(--cyan)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
+                            <span>🇮🇳</span> अनुशंसित कार्रवाई (Recommended Action in Hindi)
+                          </div>
+                          <div style={{ color: "#e0f2fe", fontSize: "13px", lineHeight: "1.6" }}>
+                            {bAct.hindiActionSummary}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
 
               {/* Officer Investigation Form */}
               <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "20px" }}>
@@ -1736,18 +1882,38 @@ export default function App() {
                   <h4 style={{ margin: "0 0 6px 0", fontSize: "13px", textTransform: "uppercase" }}>
                     II. Key Audit Findings & Irregularity Flags
                   </h4>
-                  <p style={{ fontSize: "12px", margin: "0 0 6px 0", lineHeight: "1.5" }}>
-                    {dossierData.findings_explanation}
+                  <p style={{ fontSize: "12px", margin: "0 0 8px 0", lineHeight: "1.5", color: "#1e293b" }}>
+                    {dossierData.findings_easy_english || dossierData.findings_explanation}
                   </p>
+                  {dossierData.findings_hindi && (
+                    <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", padding: "8px 12px", borderRadius: "6px" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#c2410c", display: "block", marginBottom: "2px" }}>
+                        🇮🇳 सरल हिंदी व्याख्या (Easy Hindi Explanation):
+                      </span>
+                      <p style={{ fontSize: "12px", margin: 0, color: "#7c2d12", lineHeight: "1.5" }}>
+                        {dossierData.findings_hindi}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ marginBottom: "20px" }}>
                   <h4 style={{ margin: "0 0 6px 0", fontSize: "13px", textTransform: "uppercase" }}>
                     III. Statutory Action Mandated
                   </h4>
-                  <p style={{ fontSize: "12px", margin: 0, lineHeight: "1.5" }}>
-                    {dossierData.recommended_statutory_action}
+                  <p style={{ fontSize: "12px", margin: "0 0 8px 0", lineHeight: "1.5", color: "#1e293b" }}>
+                    {dossierData.action_easy_english || dossierData.recommended_statutory_action}
                   </p>
+                  {dossierData.action_hindi && (
+                    <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", padding: "8px 12px", borderRadius: "6px" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#15803d", display: "block", marginBottom: "2px" }}>
+                        🇮🇳 आवश्यक कानूनी कार्रवाई (Directives in Hindi):
+                      </span>
+                      <p style={{ fontSize: "12px", margin: 0, color: "#14532d", lineHeight: "1.5" }}>
+                        {dossierData.action_hindi}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ borderTop: "1px solid #94a3b8", paddingTop: "14px", display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#475569" }}>
