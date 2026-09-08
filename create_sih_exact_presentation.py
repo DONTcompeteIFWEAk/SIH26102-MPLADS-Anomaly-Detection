@@ -88,7 +88,7 @@ def build_presentation():
 
         # Top-Right: SIH Logo
         if os.path.exists(logo_path):
-            slide.shapes.add_picture(logo_path, Inches(11.9), Inches(0.12), width=Inches(0.95), height=Inches(1.5))
+            slide.shapes.add_picture(logo_path, Inches(10.8), Inches(0.18), width=Inches(2.1))
 
     def add_orange_badge(slide, left, top, width, height, text):
         badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
@@ -122,7 +122,7 @@ def build_presentation():
     set_white_bg(s1)
 
     if os.path.exists(logo_path):
-        s1.shapes.add_picture(logo_path, Inches(11.8), Inches(0.2), width=Inches(1.0), height=Inches(1.65))
+        s1.shapes.add_picture(logo_path, Inches(10.8), Inches(0.18), width=Inches(2.1))
 
     # Top Center: SMART INDIA HACKATHON 2026
     sih_title_box = s1.shapes.add_textbox(Inches(1.5), Inches(0.3), Inches(9.2), Inches(0.75))
@@ -146,7 +146,7 @@ def build_presentation():
     p_tp.alignment = PP_ALIGN.CENTER
 
     if os.path.exists(bulb_center_path):
-        s1.shapes.add_picture(bulb_center_path, Inches(7.8), Inches(1.7), width=Inches(4.6))
+        s1.shapes.add_picture(bulb_center_path, Inches(8.6), Inches(1.8), height=Inches(4.9))
 
     l_box = s1.shapes.add_textbox(Inches(0.8), Inches(1.8), Inches(7.0), Inches(5.1))
     tf_l = l_box.text_frame
@@ -470,6 +470,14 @@ def build_presentation():
         print(f"SUCCESS: Also updated {out_pptx}")
     except Exception as e:
         print(f"Note: {out_pptx} is currently open in PowerPoint ({e}), saved to {out_pptx_t106}")
+
+    out_pptx_win = r"c:\Users\aksha\Desktop\SIH26102\SIH26102_Winning_Presentation.pptx"
+    try:
+        prs.save(out_pptx_win)
+        print(f"SUCCESS: Also updated {out_pptx_win}")
+    except Exception as e:
+        print(f"Note: {out_pptx_win} ({e})")
+
 
 if __name__ == "__main__":
     build_presentation()

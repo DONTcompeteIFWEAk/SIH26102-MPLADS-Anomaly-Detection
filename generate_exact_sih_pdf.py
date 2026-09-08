@@ -107,7 +107,7 @@ html_content = """<!DOCTYPE html>
   }
 
   .sih-logo-img {
-    height: 17mm;
+    height: 13mm;
     width: auto;
     object-fit: contain;
   }
@@ -187,8 +187,11 @@ html_content = """<!DOCTYPE html>
   }
 
   .s1-bulb-img {
-    max-width: 90mm;
+    max-width: 82mm;
+    max-height: 122mm;
+    width: auto;
     height: auto;
+    object-fit: contain;
   }
 </style>
 </head>
@@ -199,7 +202,7 @@ html_content = """<!DOCTYPE html>
        ========================================================= -->
   <div class="slide">
     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-      <div style="width: 25mm;"></div>
+      <div style="width: 28mm;"></div>
       <div style="flex-grow: 1;">
         <div class="s1-header-title">SMART INDIA HACKATHON 2026</div>
         <div class="s1-header-sub">TITLE PAGE</div>
