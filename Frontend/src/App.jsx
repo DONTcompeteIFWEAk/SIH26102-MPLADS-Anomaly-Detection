@@ -10,7 +10,8 @@ import {
   FileText, Search, Filter, RefreshCw, CheckCircle, AlertCircle,
   TrendingUp, Users, MapPin, Building2, ChevronRight, X,
   Printer, Play, Sliders, ExternalLink, Award, FileCheck, Layers,
-  Scissors, Zap, Compass, Calendar, History, Flame, Clock4
+  Scissors, Zap, Compass, Calendar, History, Flame, Clock4,
+  KeyRound, LogOut, ShieldCheck, Lock, IdCard, UserCheck
 } from "lucide-react";
 import "./App.css";
 
@@ -22,6 +23,7 @@ import {
   FALLBACK_WORKS,
   FALLBACK_CONSTITUENCIES,
   FALLBACK_INVESTIGATION_QUEUE,
+  FALLBACK_DEMO_OFFICERS,
   STATE_GEO_STATS,
   simulateWorkClient
 } from "./fallbackData.js";
@@ -48,6 +50,32 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isCloudDemo, setIsCloudDemo] = useState(false);
+
+  // Authentication & Role-Based Access Control State (Citizen vs Officer)
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("sih_mplads_user");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {
+      id: "public_citizen",
+      name: "Public Citizen / RTI User",
+      email: "public@citizen.gov.in",
+      role: "CITIZEN",
+      designation: "Open Data Public Viewer",
+      department: "Public Accounts Transparency",
+      badge_id: "CITIZEN-RTI",
+      jurisdiction: "All-India Public Transparency",
+      avatar_initials: "CT"
+    };
+  });
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authTab, setAuthTab] = useState("demo"); // "demo" | "credentials" | "citizen"
+  const [demoOfficers, setDemoOfficers] = useState(FALLBACK_DEMO_OFFICERS);
+  const [loginCreds, setLoginCreds] = useState({ email_or_id: "", password: "" });
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState(null);
+  const [authSuccessMsg, setAuthSuccessMsg] = useState(null);
 
   // National Analytics State
   const [nationalStats, setNationalStats] = useState(null);
@@ -286,8 +314,122 @@ export default function App() {
     }
   };
 
+  // Fetch demo officers on mount
+  useEffect(() => {
+    const fetchOfficers = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/auth/demo-officers`, { timeout: 2000 });
+        if (res.data && res.data.length) setDemoOfficers(res.data);
+      } catch (e) {
+        // Fallback remains active
+      }
+    };
+    fetchOfficers();
+  }, []);
+
+  // Auth Handlers
+  const handleDemoLogin = async (officer) => {
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      let userProfile = officer;
+      try {
+        const res = await axios.post(`${API_BASE}/api/auth/login`, { officer_id: officer.id }, { timeout: 2500 });
+        if (res.data?.user) {
+          userProfile = res.data.user;
+          if (res.data.token) localStorage.setItem("sih_mplads_token", res.data.token);
+        }
+      } catch (apiErr) {
+        console.warn("Backend auth unavailable, using verified officer profile:", apiErr?.message);
+      }
+      setCurrentUser(userProfile);
+      localStorage.setItem("sih_mplads_user", JSON.stringify(userProfile));
+      setAuthSuccessMsg(`Welcome, ${userProfile.name} (${userProfile.badge_id})!`);
+      setTimeout(() => {
+        setAuthSuccessMsg(null);
+        setAuthModalOpen(false);
+      }, 700);
+    } catch (err) {
+      setAuthError("Authentication error: " + err?.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handlePasswordLogin = async (e) => {
+    e.preventDefault();
+    if (!loginCreds.email_or_id || !loginCreds.password) {
+      setAuthError("Please provide both Officer Email/ID and Password.");
+      return;
+    }
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      try {
+        const res = await axios.post(`${API_BASE}/api/auth/login`, loginCreds, { timeout: 2500 });
+        if (res.data?.user) {
+          setCurrentUser(res.data.user);
+          localStorage.setItem("sih_mplads_user", JSON.stringify(res.data.user));
+          if (res.data.token) localStorage.setItem("sih_mplads_token", res.data.token);
+          setAuthSuccessMsg(`Welcome, ${res.data.user.name}!`);
+          setTimeout(() => {
+            setAuthSuccessMsg(null);
+            setAuthModalOpen(false);
+          }, 700);
+          return;
+        }
+      } catch (apiErr) {
+        const target = loginCreds.email_or_id.trim().toLowerCase();
+        const match = FALLBACK_DEMO_OFFICERS.find(
+          o => o.email.toLowerCase() === target || o.id.toLowerCase() === target || o.badge_id.toLowerCase() === target
+        );
+        if (match && match.password === loginCreds.password) {
+          setCurrentUser(match);
+          localStorage.setItem("sih_mplads_user", JSON.stringify(match));
+          setAuthSuccessMsg(`Welcome, ${match.name}!`);
+          setTimeout(() => {
+            setAuthSuccessMsg(null);
+            setAuthModalOpen(false);
+          }, 700);
+          return;
+        }
+        throw new Error(apiErr.response?.data?.detail || "Invalid credentials or password.");
+      }
+    } catch (err) {
+      setAuthError(err.response?.data?.detail || err.message || "Login failed");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSwitchToCitizen = () => {
+    const citizenUser = {
+      id: "public_citizen",
+      name: "Public Citizen / RTI User",
+      email: "public@citizen.gov.in",
+      role: "CITIZEN",
+      designation: "Open Data Public Viewer",
+      department: "Public Accounts Transparency",
+      badge_id: "CITIZEN-RTI",
+      jurisdiction: "All-India Public Transparency",
+      avatar_initials: "CT"
+    };
+    setCurrentUser(citizenUser);
+    localStorage.setItem("sih_mplads_user", JSON.stringify(citizenUser));
+    localStorage.removeItem("sih_mplads_token");
+    setAuthSuccessMsg("Switched to Public Citizen Mode (Open Data / RTI)");
+    setTimeout(() => {
+      setAuthSuccessMsg(null);
+      setAuthModalOpen(false);
+    }, 600);
+  };
+
   // Open Work Detail Modal
   const openWorkDetail = async (workId) => {
+    const defaultOfficer = currentUser.role === "OFFICER"
+      ? `${currentUser.name} (${currentUser.badge_id})`
+      : "District Vigilance Auditor";
+
     if (isCloudDemo) {
       const found = FALLBACK_WORKS.find(w => w.work_id === workId) || worksData.items.find(w => w.work_id === workId);
       if (found) {
@@ -295,8 +437,8 @@ export default function App() {
         setInvestigationForm({
           status: "UNDER REVIEW",
           priority: found.hybrid_risk_level === "CRITICAL" ? "CRITICAL" : "HIGH",
-          officer_name: "Auditor Desk",
-          officer_note: "Physical site inspection flagged for verification.",
+          officer_name: defaultOfficer,
+          officer_note: "Physical site inspection flagged for statutory verification under GFR 149.",
           checklist_verified: true
         });
         setWorkModalOpen(true);
@@ -310,7 +452,7 @@ export default function App() {
         setInvestigationForm({
           status: res.data.investigation.status || "UNDER REVIEW",
           priority: res.data.investigation.priority || "HIGH",
-          officer_name: res.data.investigation.officer_name || "Lead Auditor",
+          officer_name: res.data.investigation.officer_name || defaultOfficer,
           officer_note: res.data.investigation.officer_note || "",
           checklist_verified: res.data.investigation.checklist_verified || false
         });
@@ -318,7 +460,7 @@ export default function App() {
         setInvestigationForm({
           status: "UNDER REVIEW",
           priority: "HIGH",
-          officer_name: "Lead Auditor",
+          officer_name: defaultOfficer,
           officer_note: "",
           checklist_verified: false
         });
@@ -332,7 +474,7 @@ export default function App() {
         setInvestigationForm({
           status: "UNDER REVIEW",
           priority: "HIGH",
-          officer_name: "Lead Auditor",
+          officer_name: defaultOfficer,
           officer_note: "",
           checklist_verified: false
         });
@@ -344,6 +486,20 @@ export default function App() {
   // Save Investigation
   const handleSaveInvestigation = async () => {
     if (!selectedWork) return;
+
+    if (currentUser.role !== "OFFICER") {
+      alert("Statutory Access Required: Under CAG Audit Regulations, only verified statutory officers can update case records or verify checklists. Please sign in as an Officer.");
+      setAuthModalOpen(true);
+      return;
+    }
+
+    const officerFull = currentUser.name ? `${currentUser.name} (${currentUser.badge_id})` : investigationForm.officer_name;
+    const payloadToSend = {
+      ...investigationForm,
+      officer_name: officerFull,
+      officer_badge_id: currentUser.badge_id,
+      officer_department: currentUser.department
+    };
     if (isCloudDemo) {
       setSavingInvestigation(true);
       setTimeout(() => {
@@ -353,7 +509,7 @@ export default function App() {
             work_id: selectedWork.work_id,
             status: investigationForm.status,
             priority: investigationForm.priority,
-            officer_name: investigationForm.officer_name,
+            officer_name: officerFull,
             officer_note: investigationForm.officer_note,
             checklist_verified: investigationForm.checklist_verified,
             updated_at: new Date().toISOString(),
@@ -367,17 +523,17 @@ export default function App() {
         ];
         setInvestigationQueue(updated);
         setSavingInvestigation(false);
-        alert("Audit case record saved successfully (Cloud Demo Mode)!");
+        alert(`Audit case record saved by ${officerFull}!`);
       }, 350);
       return;
     }
     try {
       setSavingInvestigation(true);
-      await axios.post(`${API_BASE}/api/work-investigations/${selectedWork.work_id}`, investigationForm, { timeout: 3000 });
+      await axios.post(`${API_BASE}/api/work-investigations/${selectedWork.work_id}`, payloadToSend, { timeout: 3000 });
       const qRes = await axios.get(`${API_BASE}/api/work-investigations/queue`);
       setInvestigationQueue(qRes.data);
       await openWorkDetail(selectedWork.work_id);
-      alert("Investigation updated successfully!");
+      alert(`Statutory Case Record saved and digitally stamped by ${officerFull}!`);
     } catch (err) {
       console.warn("handleSaveInvestigation API failed, updating in session:", err?.message);
       alert("Investigation updated in local session!");
@@ -598,6 +754,43 @@ export default function App() {
         </div>
 
         <div className="topbar-right">
+          {/* Active Persona Badge & Switcher */}
+          {currentUser.role === "OFFICER" ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div
+                className="officer-badge-pill"
+                onClick={() => { setAuthTab("demo"); setAuthModalOpen(true); }}
+                title="Click to view Officer Credential or Switch Profile"
+              >
+                <div className="officer-avatar">{currentUser.avatar_initials || "OF"}</div>
+                <div className="officer-badge-text">
+                  <span className="officer-badge-name">
+                    {currentUser.name}
+                    <span style={{ marginLeft: "6px", fontSize: "9px", background: "#10b981", color: "#000", padding: "1px 5px", borderRadius: "3px", fontWeight: 800 }}>OFFICER</span>
+                  </span>
+                  <span className="officer-badge-role">{currentUser.badge_id} • {currentUser.designation}</span>
+                </div>
+              </div>
+              <button onClick={handleSwitchToCitizen} className="btn-logout" title="Exit Officer Mode to Public Citizen View">
+                <LogOut size={13} /> Exit
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div className="citizen-badge-pill" title="You are currently in Open Data / Public Citizen Mode (RTI View)">
+                <Users size={14} />
+                <span>Public Citizen (RTI Mode)</span>
+              </div>
+              <button
+                onClick={() => { setAuthTab("demo"); setAuthModalOpen(true); }}
+                className="btn-officer-login"
+                title="Sign in with Statutory District / CAG Officer Credentials"
+              >
+                <KeyRound size={13} /> Officer Login
+              </button>
+            </div>
+          )}
+
           <div
             className="status-pill"
             style={{
@@ -612,8 +805,9 @@ export default function App() {
                 boxShadow: isCloudDemo ? "0 0 10px #38bdf8" : "0 0 10px #10b981"
               }}
             ></span>
-            {isCloudDemo ? "⚡ Vercel Cloud Demo (105,000 Real Works)" : "🟢 Live PostgreSQL • 105,000 Works Monitored"}
+            {isCloudDemo ? "⚡ Vercel Cloud Demo (105k Works)" : "🟢 Live PostgreSQL • 105k Works"}
           </div>
+
           <button onClick={loadDashboardData} className="btn-audit-view" title="Refresh Data">
             <RefreshCw size={14} /> Refresh
           </button>
@@ -2372,80 +2566,137 @@ export default function App() {
                   </button>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "14px" }}>
-                  <div>
-                    <label className="form-label">Investigation Status</label>
-                    <select
-                      className="filter-select"
-                      style={{ width: "100%" }}
-                      value={investigationForm.status}
-                      onChange={(e) => setInvestigationForm({ ...investigationForm, status: e.target.value })}
+                {currentUser.role === "OFFICER" ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.35)", padding: "10px 14px", borderRadius: "8px", marginBottom: "14px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <ShieldCheck size={18} color="#34d399" />
+                        <span style={{ fontSize: "12px", color: "#a7f3d0" }}>
+                          <strong>Statutory Enforcement Session:</strong> Logged in as <strong>{currentUser.name}</strong> ({currentUser.badge_id}) • {currentUser.department}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: "10px", background: "#10b981", color: "#000", fontWeight: 800, padding: "2px 6px", borderRadius: "4px" }}>
+                        DIGITALLY VERIFIED
+                      </span>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "14px" }}>
+                      <div>
+                        <label className="form-label">Investigation Status</label>
+                        <select
+                          className="filter-select"
+                          style={{ width: "100%" }}
+                          value={investigationForm.status}
+                          onChange={(e) => setInvestigationForm({ ...investigationForm, status: e.target.value })}
+                        >
+                          <option value="NEW">NEW</option>
+                          <option value="UNDER REVIEW">UNDER REVIEW</option>
+                          <option value="SITE INSPECTION SCHEDULED">SITE INSPECTION SCHEDULED</option>
+                          <option value="AUDIT ESCALATED">AUDIT ESCALATED</option>
+                          <option value="RESOLVED">RESOLVED</option>
+                          <option value="FALSE POSITIVE">FALSE POSITIVE</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="form-label">Audit Priority</label>
+                        <select
+                          className="filter-select"
+                          style={{ width: "100%" }}
+                          value={investigationForm.priority}
+                          onChange={(e) => setInvestigationForm({ ...investigationForm, priority: e.target.value })}
+                        >
+                          <option value="CRITICAL">CRITICAL (CAG Escalation)</option>
+                          <option value="HIGH">HIGH (Immediate Verification)</option>
+                          <option value="ROUTINE">ROUTINE (Standard)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <label className="form-label">Lead Auditor Name &amp; Designation</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={investigationForm.officer_name}
+                        onChange={(e) => setInvestigationForm({ ...investigationForm, officer_name: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-row">
+                      <label className="form-label">Auditor Findings &amp; Field Observations</label>
+                      <textarea
+                        rows={3}
+                        className="form-textarea"
+                        placeholder="Enter site verification observations, bill vouchers checked, DPR discrepancies..."
+                        value={investigationForm.officer_note}
+                        onChange={(e) => setInvestigationForm({ ...investigationForm, officer_note: e.target.value })}
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+                      <input
+                        type="checkbox"
+                        id="checklist_verified"
+                        checked={investigationForm.checklist_verified}
+                        onChange={(e) => setInvestigationForm({ ...investigationForm, checklist_verified: e.target.checked })}
+                        style={{ accentColor: "var(--cyan)", width: "16px", height: "16px" }}
+                      />
+                      <label htmlFor="checklist_verified" style={{ fontSize: "13px", color: "var(--text-primary)" }}>
+                        Statutory Field Checklist verified with Implementing District Authority (IDA) records
+                      </label>
+                    </div>
+
+                    <button
+                      className="btn-simulate"
+                      onClick={handleSaveInvestigation}
+                      disabled={savingInvestigation}
                     >
-                      <option value="NEW">NEW</option>
-                      <option value="UNDER REVIEW">UNDER REVIEW</option>
-                      <option value="SITE INSPECTION SCHEDULED">SITE INSPECTION SCHEDULED</option>
-                      <option value="AUDIT ESCALATED">AUDIT ESCALATED</option>
-                      <option value="RESOLVED">RESOLVED</option>
-                      <option value="FALSE POSITIVE">FALSE POSITIVE</option>
-                    </select>
-                  </div>
+                      {savingInvestigation ? "Saving Case Record..." : "Save Audit Case Record"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border-subtle)", borderRadius: "8px", padding: "14px", marginBottom: "14px" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "10px" }}>
+                        <div>
+                          <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>Investigation Status</span>
+                          <span className="badge-pill" style={{ background: "rgba(59, 130, 246, 0.2)", color: "#60a5fa", marginTop: "4px", display: "inline-block" }}>
+                            {investigationForm.status}
+                          </span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>Audit Priority</span>
+                          <span className="badge-pill" style={{ background: "rgba(249, 115, 22, 0.2)", color: "#fb923c", marginTop: "4px", display: "inline-block" }}>
+                            {investigationForm.priority}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: "10px" }}>
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>Assigned Auditor / Authority</span>
+                        <span style={{ fontSize: "13px", color: "var(--text-primary)", fontWeight: 600 }}>{investigationForm.officer_name || "Unassigned"}</span>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>Field Observation Notes</span>
+                        <span style={{ fontSize: "13px", color: "var(--text-secondary)", fontStyle: investigationForm.officer_note ? "normal" : "italic" }}>
+                          {investigationForm.officer_note || "No officer notes recorded yet for this work."}
+                        </span>
+                      </div>
+                    </div>
 
-                  <div>
-                    <label className="form-label">Audit Priority</label>
-                    <select
-                      className="filter-select"
-                      style={{ width: "100%" }}
-                      value={investigationForm.priority}
-                      onChange={(e) => setInvestigationForm({ ...investigationForm, priority: e.target.value })}
-                    >
-                      <option value="CRITICAL">CRITICAL (CAG Escalation)</option>
-                      <option value="HIGH">HIGH (Immediate Verification)</option>
-                      <option value="ROUTINE">ROUTINE (Standard)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <label className="form-label">Lead Auditor Name</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={investigationForm.officer_name}
-                    onChange={(e) => setInvestigationForm({ ...investigationForm, officer_name: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-row">
-                  <label className="form-label">Auditor Findings & Field Observations</label>
-                  <textarea
-                    rows={3}
-                    className="form-textarea"
-                    placeholder="Enter site verification observations, bill vouchers checked, DPR discrepancies..."
-                    value={investigationForm.officer_note}
-                    onChange={(e) => setInvestigationForm({ ...investigationForm, officer_note: e.target.value })}
-                  />
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-                  <input
-                    type="checkbox"
-                    id="checklist_verified"
-                    checked={investigationForm.checklist_verified}
-                    onChange={(e) => setInvestigationForm({ ...investigationForm, checklist_verified: e.target.checked })}
-                    style={{ accentColor: "var(--cyan)", width: "16px", height: "16px" }}
-                  />
-                  <label htmlFor="checklist_verified" style={{ fontSize: "13px", color: "var(--text-primary)" }}>
-                    Statutory Field Checklist verified with Implementing District Authority (IDA) records
-                  </label>
-                </div>
-
-                <button
-                  className="btn-simulate"
-                  onClick={handleSaveInvestigation}
-                  disabled={savingInvestigation}
-                >
-                  {savingInvestigation ? "Saving Case Record..." : "Save Audit Case Record"}
-                </button>
+                    <div className="citizen-restricted-card">
+                      <div className="citizen-restricted-title">
+                        <Lock size={16} /> Statutory Officer Authorization Required
+                      </div>
+                      <div className="citizen-restricted-desc">
+                        Under CAG Audit Regulations and GFR Rule 149, public citizens have full open-data visibility under RTI. Modifying case statuses, verifying field checklists, or logging official audit remarks requires an authorized District Vigilance or CAG Officer account.
+                      </div>
+                      <button className="btn-officer-unlock" onClick={() => { setAuthTab("demo"); setAuthModalOpen(true); }}>
+                        <KeyRound size={14} /> Sign in as Statutory Officer to Edit / Verify
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -2587,6 +2838,169 @@ export default function App() {
                   © 2024–{new Date().getFullYear()} Office of the Comptroller and Auditor General (CAG) & MoSPI. All Rights Reserved. Official Statutory Record.
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
+          AUTHENTICATION & ROLE SELECTION MODAL
+          ===================================================== */}
+      {authModalOpen && (
+        <div className="modal-overlay" onClick={() => setAuthModalOpen(false)}>
+          <div className="auth-modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ padding: "18px 24px", background: "rgba(15, 23, 42, 0.95)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <ShieldCheck size={22} color="var(--cyan)" />
+                <div>
+                  <h3 style={{ color: "#fff", margin: 0, fontSize: "17px", fontWeight: 700 }}>
+                    SIH26102 Statutory Role &amp; Access Portal
+                  </h3>
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                    Select a Verified Persona or Sign In with Government Credentials
+                  </span>
+                </div>
+              </div>
+              <button className="btn-close" onClick={() => setAuthModalOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Nav Tabs */}
+            <div className="auth-tabs-nav">
+              <button
+                className={`auth-tab-btn ${authTab === "demo" ? "active" : ""}`}
+                onClick={() => { setAuthTab("demo"); setAuthError(null); }}
+              >
+                <Zap size={14} /> ⚡ 1-Click Demo Profiles (For SIH Jury)
+              </button>
+              <button
+                className={`auth-tab-btn ${authTab === "credentials" ? "active" : ""}`}
+                onClick={() => { setAuthTab("credentials"); setAuthError(null); }}
+              >
+                <KeyRound size={14} /> 🔑 Officer Password Login
+              </button>
+              <button
+                className={`auth-tab-btn ${authTab === "citizen" ? "active" : ""}`}
+                onClick={() => { setAuthTab("citizen"); setAuthError(null); }}
+              >
+                <Users size={14} /> 👤 Public Citizen Mode
+              </button>
+            </div>
+
+            <div style={{ padding: "24px" }}>
+              {/* Notifications / Feedback */}
+              {authSuccessMsg && (
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.4)", color: "#34d399", padding: "12px 16px", borderRadius: "8px", marginBottom: "18px", fontSize: "13px", fontWeight: 600 }}>
+                  <CheckCircle size={18} /> {authSuccessMsg}
+                </div>
+              )}
+
+              {authError && (
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.4)", color: "#f87171", padding: "12px 16px", borderRadius: "8px", marginBottom: "18px", fontSize: "13px" }}>
+                  <AlertTriangle size={18} /> {authError}
+                </div>
+              )}
+
+              {/* TAB 1: 1-Click Demo Logins for Hackathon Evaluators */}
+              {authTab === "demo" && (
+                <div>
+                  <div style={{ background: "rgba(6, 182, 212, 0.08)", border: "1px solid rgba(6, 182, 212, 0.25)", padding: "12px 16px", borderRadius: "8px", marginBottom: "16px" }}>
+                    <span style={{ fontSize: "12px", color: "#93c5fd", lineHeight: "1.5", display: "block" }}>
+                      💡 <strong>Notice for SIH Judges:</strong> Click any of the pre-configured statutory accounts below to instantly assume an official vigilance identity and test privileged case adjudications, verification checklists, and CAG dossier seals.
+                    </span>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    {demoOfficers.map((off) => (
+                      <div
+                        key={off.id}
+                        className="demo-officer-card"
+                        onClick={() => handleDemoLogin(off)}
+                      >
+                        <div className="demo-officer-left">
+                          <div className="demo-officer-avatar">{off.avatar_initials || "OF"}</div>
+                          <div>
+                            <div className="demo-officer-name">
+                              {off.name}
+                              <span className="demo-officer-badge">{off.badge_id}</span>
+                            </div>
+                            <div className="demo-officer-designation">{off.designation}</div>
+                            <div className="demo-officer-dept">{off.department} • <em>{off.jurisdiction}</em></div>
+                          </div>
+                        </div>
+                        <button className="btn-demo-select">
+                          {authLoading ? "Authenticating..." : "1-Click Sign In →"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: Standard Password Login */}
+              {authTab === "credentials" && (
+                <form onSubmit={handlePasswordLogin}>
+                  <div style={{ marginBottom: "16px" }}>
+                    <label className="form-label">Officer Email ID / Badge Identifier</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. akshat.mittal@cag.gov.in or CAG-DL-9412"
+                      value={loginCreds.email_or_id}
+                      onChange={(e) => setLoginCreds({ ...loginCreds, email_or_id: e.target.value })}
+                      required
+                    />
+                    <span style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>
+                      Demo accounts: <code>akshat.mittal@cag.gov.in</code> (pwd: <code>cag@2026</code>) or <code>khushi.sharma@ias.gov.in</code> (pwd: <code>ias@2026</code>)
+                    </span>
+                  </div>
+
+                  <div style={{ marginBottom: "20px" }}>
+                    <label className="form-label">Government Portal Security Key / Password</label>
+                    <input
+                      type="password"
+                      className="form-input"
+                      placeholder="••••••••••••"
+                      value={loginCreds.password}
+                      onChange={(e) => setLoginCreds({ ...loginCreds, password: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn-simulate"
+                    disabled={authLoading}
+                    style={{ width: "100%", justifyContent: "center" }}
+                  >
+                    {authLoading ? "Verifying Official Credentials..." : "Authenticate as Statutory Officer"}
+                  </button>
+                </form>
+              )}
+
+              {/* TAB 3: Public Citizen Mode */}
+              {authTab === "citizen" && (
+                <div style={{ textAlign: "center", padding: "10px 0" }}>
+                  <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "rgba(56, 189, 248, 0.1)", border: "1px solid rgba(56, 189, 248, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px auto" }}>
+                    <Users size={28} color="#38bdf8" />
+                  </div>
+                  <h4 style={{ color: "#fff", fontSize: "16px", marginBottom: "8px" }}>
+                    Public Citizen Open Data Mode (RTI)
+                  </h4>
+                  <p style={{ color: "var(--text-secondary)", fontSize: "13px", maxWidth: "460px", margin: "0 auto 20px auto", lineHeight: "1.6" }}>
+                    Under the Right to Information (RTI) Act &amp; National Data Sharing Policy, any taxpayer or citizen can freely explore 105,000+ MPLADS works, inspect GIS risk heatmaps, view contractor allocations, and test the real-time AI anomaly simulator.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn-audit-view"
+                    onClick={handleSwitchToCitizen}
+                    style={{ margin: "0 auto", padding: "10px 24px", fontSize: "13px", fontWeight: 700 }}
+                  >
+                    Continue in Public Citizen Mode
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

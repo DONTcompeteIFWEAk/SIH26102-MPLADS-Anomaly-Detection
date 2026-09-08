@@ -1,5 +1,44 @@
 // Real pre-compiled MPLADS dataset for Cloud/Vercel standalone resilience (105,000+ Works)
 
+export const FALLBACK_DEMO_OFFICERS = [
+  {
+    id: "cag_akshat",
+    name: "Akshat Mittal",
+    email: "akshat.mittal@cag.gov.in",
+    password: "cag@2026",
+    role: "OFFICER",
+    designation: "Senior Audit Officer (Public Accounts)",
+    department: "Comptroller & Auditor General of India (CAG)",
+    badge_id: "CAG-DL-9412",
+    jurisdiction: "Central Vigilance & National MPLADS Audit",
+    avatar_initials: "AM"
+  },
+  {
+    id: "dm_khushi",
+    name: "Khushi Sharma, IAS",
+    email: "khushi.sharma@ias.gov.in",
+    password: "ias@2026",
+    role: "OFFICER",
+    designation: "District Magistrate & MPLADS Authority",
+    department: "District Vigilance Directorate, MoSPI",
+    badge_id: "DM-BH-2041",
+    jurisdiction: "State Vigilance & District Administration",
+    avatar_initials: "KS"
+  },
+  {
+    id: "sih_jury",
+    name: "SIH Hackathon Evaluator",
+    email: "evaluator.jury@sih.gov.in",
+    password: "sih@2026",
+    role: "OFFICER",
+    designation: "Chief Vigilance Inspector & Grand Jury",
+    department: "Ministry of Statistics & PI (MoSPI)",
+    badge_id: "SIH-JURY-2026",
+    jurisdiction: "All-India Scheme Audit & Evaluation",
+    avatar_initials: "SJ"
+  }
+];
+
 export const FALLBACK_NATIONAL_STATS = {
   total_works: 105000,
   total_mps: 557,

@@ -70,6 +70,22 @@ class PredictRequest(BaseModel):
     status: str = "Unsanctioned"
     same_work_location_count: int = 4
 
+class LoginRequest(BaseModel):
+    email_or_id: Optional[str] = None
+    officer_id: Optional[str] = None
+    password: Optional[str] = None
+
+class OfficerProfile(BaseModel):
+    id: str
+    name: str
+    email: str
+    role: str
+    designation: str
+    department: str
+    badge_id: str
+    jurisdiction: str
+    avatar_initials: str
+
 class WorkInvestigationUpdate(BaseModel):
     status: str = "UNDER REVIEW"
     priority: str = "HIGH"
@@ -77,10 +93,169 @@ class WorkInvestigationUpdate(BaseModel):
     officer_note: str = ""
     checklist_verified: bool = False
     site_inspection_date: Optional[str] = None
+    officer_badge_id: Optional[str] = None
+    officer_department: Optional[str] = None
 
 class LegacyInvestigationUpdate(BaseModel):
     status: str
     officer_note: str = ""
+
+# Pre-seeded Statutory Officers for 1-Click Evaluation
+DEMO_OFFICERS = [
+    {
+        "id": "cag_akshat",
+        "name": "Akshat Mittal",
+        "email": "akshat.mittal@cag.gov.in",
+        "password": "cag@2026",
+        "role": "OFFICER",
+        "designation": "Senior Audit Officer (Public Accounts)",
+        "department": "Comptroller & Auditor General of India (CAG)",
+        "badge_id": "CAG-DL-9412",
+        "jurisdiction": "Central Vigilance & National MPLADS Audit",
+        "avatar_initials": "AM"
+    },
+    {
+        "id": "dm_khushi",
+        "name": "Khushi Sharma, IAS",
+        "email": "khushi.sharma@ias.gov.in",
+        "password": "ias@2026",
+        "role": "OFFICER",
+        "designation": "District Magistrate & MPLADS Authority",
+        "department": "District Vigilance Directorate, MoSPI",
+        "badge_id": "DM-BH-2041",
+        "jurisdiction": "State Vigilance & District Administration",
+        "avatar_initials": "KS"
+    },
+    {
+        "id": "sih_jury",
+        "name": "SIH Hackathon Evaluator",
+        "email": "evaluator.jury@sih.gov.in",
+        "password": "sih@2026",
+        "role": "OFFICER",
+        "designation": "Chief Vigilance Inspector & Grand Jury",
+        "department": "Ministry of Statistics & PI (MoSPI)",
+        "badge_id": "SIH-JURY-2026",
+        "jurisdiction": "All-India Scheme Audit & Evaluation",
+        "avatar_initials": "SJ"
+    }
+]
+
+# =========================================================
+# AUTHENTICATION & ROLE-BASED ACCESS CONTROL (RBAC)
+# =========================================================
+
+@app.get("/api/auth/demo-officers")
+def get_demo_officers():
+    """
+    Returns pre-seeded officer profiles for 1-Click Jury & Evaluator login.
+    """
+    return [
+        {
+            "id": o["id"],
+            "name": o["name"],
+            "email": o["email"],
+            "role": o["role"],
+            "designation": o["designation"],
+            "department": o["department"],
+            "badge_id": o["badge_id"],
+            "jurisdiction": o["jurisdiction"],
+            "avatar_initials": o["avatar_initials"]
+        }
+        for o in DEMO_OFFICERS
+    ]
+
+@app.post("/api/auth/login")
+def auth_login(payload: LoginRequest):
+    """
+    Authenticates an officer via 1-Click officer_id OR credentials (email & password).
+    """
+    officer = None
+    if payload.officer_id:
+        officer = next((o for o in DEMO_OFFICERS if o["id"] == payload.officer_id), None)
+    elif payload.email_or_id:
+        target = payload.email_or_id.strip().lower()
+        officer = next((o for o in DEMO_OFFICERS if o["email"].lower() == target or o["id"].lower() == target or o["badge_id"].lower() == target), None)
+        if officer and payload.password and payload.password != officer["password"]:
+            raise HTTPException(status_code=401, detail="Invalid officer password or credentials")
+    
+    if not officer:
+        # Check if citizen login requested
+        if payload.email_or_id and "citizen" in payload.email_or_id.lower():
+            return {
+                "status": "success",
+                "token": "citizen_session_token",
+                "user": {
+                    "id": "public_citizen",
+                    "name": "Public Citizen / RTI User",
+                    "email": "public@citizen.gov.in",
+                    "role": "CITIZEN",
+                    "designation": "Open Data RTI Public Inspector",
+                    "department": "Public Accounts Transparency",
+                    "badge_id": "CITIZEN-RTI",
+                    "jurisdiction": "All India Public View",
+                    "avatar_initials": "CT"
+                }
+            }
+        raise HTTPException(status_code=404, detail="Officer profile not found. Please select from demo profiles or enter valid credentials.")
+
+    token = f"officer_jwt_{officer['id']}_{int(datetime.utcnow().timestamp())}"
+    safe_profile = {
+        "id": officer["id"],
+        "name": officer["name"],
+        "email": officer["email"],
+        "role": officer["role"],
+        "designation": officer["designation"],
+        "department": officer["department"],
+        "badge_id": officer["badge_id"],
+        "jurisdiction": officer["jurisdiction"],
+        "avatar_initials": officer["avatar_initials"]
+    }
+    return {
+        "status": "success",
+        "token": token,
+        "user": safe_profile
+    }
+
+@app.get("/api/auth/me")
+def get_current_user_profile(token: Optional[str] = Query(None)):
+    """
+    Returns current authenticated profile based on session token.
+    """
+    if token and token.startswith("officer_jwt_"):
+        parts = token.split("_")
+        if len(parts) >= 3:
+            matched_id = parts[2]
+            officer = next((o for o in DEMO_OFFICERS if o["id"].startswith(matched_id) or matched_id in o["id"]), None)
+            if officer:
+                return {
+                    "status": "authenticated",
+                    "user": {
+                        "id": officer["id"],
+                        "name": officer["name"],
+                        "email": officer["email"],
+                        "role": officer["role"],
+                        "designation": officer["designation"],
+                        "department": officer["department"],
+                        "badge_id": officer["badge_id"],
+                        "jurisdiction": officer["jurisdiction"],
+                        "avatar_initials": officer["avatar_initials"]
+                    }
+                }
+    return {
+        "status": "guest",
+        "user": {
+            "id": "public_citizen",
+            "name": "Public Citizen / RTI User",
+            "email": "public@citizen.gov.in",
+            "role": "CITIZEN",
+            "designation": "Open Data RTI Public Inspector",
+            "department": "Public Accounts Transparency",
+            "badge_id": "CITIZEN-RTI",
+            "jurisdiction": "All India Public View",
+            "avatar_initials": "CT"
+        }
+    }
+
 
 # =========================================================
 # ROOT & SYSTEM HEALTH
