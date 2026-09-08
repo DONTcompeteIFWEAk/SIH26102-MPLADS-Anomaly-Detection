@@ -44,7 +44,7 @@ const RISK_COLORS = {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState("overview"); // overview, map, explorer, finances, simulator, investigations, methodology
+  const [activeTab, setActiveTab] = useState(() => new URLSearchParams(window.location.search).get("tab") || "overview"); // overview, map, explorer, finances, simulator, investigations, methodology
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isCloudDemo, setIsCloudDemo] = useState(false);

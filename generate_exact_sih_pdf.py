@@ -4,6 +4,7 @@ import subprocess
 html_path = r"c:\Users\aksha\Desktop\SIH26102\sih_exact_presentation_slides.html"
 pdf_path_t106 = r"c:\Users\aksha\Desktop\SIH26102\SIH2026_IDEA_Presentation_SIH26102_T106.pdf"
 pdf_path_main = r"c:\Users\aksha\Desktop\SIH26102\SIH2026_IDEA_Presentation_SIH26102.pdf"
+pdf_path_win = r"c:\Users\aksha\Desktop\SIH26102\SIH26102_Winning_Presentation.pdf"
 
 html_content = """<!DOCTYPE html>
 <html lang="en">
@@ -36,7 +37,7 @@ html_content = """<!DOCTYPE html>
     page-break-after: always;
     page-break-inside: avoid;
     position: relative;
-    padding: 8mm 14mm 16mm 14mm;
+    padding: 6mm 12mm 14mm 12mm;
     background: #ffffff;
     overflow: hidden;
   }
@@ -44,63 +45,69 @@ html_content = """<!DOCTYPE html>
   /* Slide 1 Header */
   .s1-header-title {
     text-align: center;
-    font-size: 26pt;
+    font-size: 25pt;
     font-weight: bold;
     color: #1d4477;
-    margin: 2mm 0 2mm 0;
+    margin: 1mm 0 1mm 0;
     font-family: "Times New Roman", serif;
   }
 
   .s1-header-sub {
     text-align: center;
-    font-size: 21pt;
+    font-size: 20pt;
     font-weight: bold;
     color: #000000;
-    margin: 0 0 6mm 0;
+    margin: 0 0 4mm 0;
     font-family: "Times New Roman", serif;
   }
 
-  /* Regular Slide Header */
+  /* Standard Slide Header */
   .slide-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 5mm;
-    position: relative;
-    height: 24mm;
+    height: 18mm;
+    margin-bottom: 2mm;
   }
 
   .team-oval {
     width: 32mm;
-    height: 22mm;
-    border: 2.5px solid #5b3e84;
+    height: 16mm;
+    border: 2px solid #5b21b6;
     border-radius: 50%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    font-size: 10pt;
-    font-weight: bold;
-    color: #0f172a;
-    line-height: 1.15;
+    justify-content: center;
     text-align: center;
-    background: #fff;
+    font-size: 8.5pt;
+    font-weight: bold;
+    line-height: 1.1;
+    color: #1e1b4b;
+    background: #ffffff;
     font-family: "Times New Roman", serif;
   }
 
   .slide-title-center {
-    font-size: 24pt;
+    font-size: 22pt;
     font-weight: bold;
     color: #000000;
+    letter-spacing: 0.5px;
+    font-family: "Times New Roman", serif;
     text-align: center;
     flex-grow: 1;
-    font-family: "Times New Roman", serif;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+  }
+
+  .slide-subtitle-center {
+    font-size: 10pt;
+    color: #475569;
+    text-align: center;
+    margin-top: -1mm;
+    font-family: Arial, sans-serif;
   }
 
   .sih-logo-img {
-    height: 23mm;
+    height: 17mm;
     width: auto;
     object-fit: contain;
   }
@@ -110,119 +117,49 @@ html_content = """<!DOCTYPE html>
     position: absolute;
     bottom: 0;
     left: 0;
-    right: 0;
-    height: 13mm;
-    background: #0f62ac;
-    color: #ffffff;
+    width: 100%;
+    height: 9mm;
+    background: #145da0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 16mm;
+    padding: 0 14mm;
+    color: #ffffff;
     font-family: Arial, sans-serif;
   }
 
   .bottom-team-text {
-    flex-grow: 1;
-    text-align: center;
-    font-size: 11.5pt;
+    font-size: 10pt;
     font-weight: bold;
     letter-spacing: 0.5px;
   }
 
   .bottom-slide-num {
-    font-size: 12pt;
+    font-size: 10.5pt;
     font-weight: bold;
   }
 
-  /* Content Elements with Enlarged Font */
-  .main-heading-blue {
-    font-size: 17pt;
+  /* Section Orange Badges */
+  .orange-header-banner {
+    background: #FFA053;
+    color: #000000;
     font-weight: bold;
-    color: #1e5a99;
-    text-decoration: underline;
-    margin: 0 0 4mm 0;
-    font-family: "Times New Roman", serif;
+    font-size: 11.5pt;
+    text-align: center;
+    padding: 1.8mm 0;
+    border-radius: 6px;
+    border: 1.5px solid #000000;
+    font-family: Arial, sans-serif;
+    letter-spacing: 0.2px;
+    margin-bottom: 2mm;
   }
 
-  /* 3 Columns Card for Slide 2 */
-  .cards-3-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 5.5mm;
-    height: 112mm;
-  }
-
+  /* Content Cards */
   .card-box {
     background: #f8fafc;
-    border: 1.2px solid #cbd5e1;
+    border: 1px solid #cbd5e1;
     border-radius: 6px;
-    padding: 4mm 5mm;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .card-box h4 {
-    margin: 0 0 2.5mm 0;
-    font-size: 12.5pt;
-    font-weight: bold;
-    color: #1d4477;
-    font-family: "Times New Roman", serif;
-    line-height: 1.25;
-  }
-
-  .card-box p, .card-box li {
-    font-size: 10.5pt;
-    line-height: 1.45;
-    color: #1e293b;
-    margin: 0 0 2.5mm 0;
-  }
-
-  .card-box ul {
-    margin: 0;
-    padding-left: 4.5mm;
-  }
-
-  /* Slide 3 Flowchart */
-  .flowchart-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 5mm;
-    width: 100%;
-  }
-
-  .flow-step {
-    width: 49mm;
-    background: #f0f7ff;
-    border: 1.8px solid #0f62ac;
-    border-radius: 7px;
-    padding: 3.5mm 3.5mm;
-    height: 60mm;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-  }
-
-  .flow-step-title {
-    font-size: 11pt;
-    font-weight: bold;
-    color: #0f62ac;
-    text-align: center;
-    border-bottom: 1.5px solid #bfdbfe;
-    padding-bottom: 1.5mm;
-    margin-bottom: 2.5mm;
-    font-family: Arial, sans-serif;
-  }
-
-  .flow-step-body {
-    font-size: 9.5pt;
-    line-height: 1.45;
-    color: #0f172a;
-    font-family: Arial, sans-serif;
-  }
-
-  .flow-arrow {
-    font-size: 18pt;
-    color: #0f62ac;
-    font-weight: bold;
+    padding: 2.5mm 3.5mm;
   }
 
   /* Slide 1 Cover Layout */
@@ -230,13 +167,13 @@ html_content = """<!DOCTYPE html>
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 4mm;
+    margin-top: 2mm;
   }
 
   .s1-left-list {
-    width: 62%;
-    font-size: 16pt;
-    line-height: 2.0;
+    width: 63%;
+    font-size: 14.5pt;
+    line-height: 1.85;
     font-family: "Times New Roman", serif;
   }
 
@@ -245,12 +182,12 @@ html_content = """<!DOCTYPE html>
   }
 
   .s1-right-img {
-    width: 36%;
+    width: 35%;
     text-align: center;
   }
 
   .s1-bulb-img {
-    max-width: 95mm;
+    max-width: 90mm;
     height: auto;
   }
 </style>
@@ -258,7 +195,7 @@ html_content = """<!DOCTYPE html>
 <body>
 
   <!-- =========================================================
-       SLIDE 1: TITLE PAGE (Exact Match to Screenshot 1)
+       SLIDE 1: TITLE PAGE (Exact Match to Official SIH Format)
        ========================================================= -->
   <div class="slide">
     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -294,43 +231,68 @@ html_content = """<!DOCTYPE html>
   </div>
 
   <!-- =========================================================
-       SLIDE 2: IDEA TITLE / PROPOSED SOLUTION (Screenshot 2)
+       SLIDE 2: PROBLEM STATEMENT, WHY DIFFERENT & IDEA/APPROACH
+       (Embedded Winning Slide matching WhatsApp Reference)
        ========================================================= -->
   <div class="slide">
     <div class="slide-header">
       <div class="team-oval">Team<br>RunTime<br>Terror</div>
-      <div class="slide-title-center">IDEA TITLE</div>
+      <div class="slide-title-center">IDEA TITLE / PROPOSED SOLUTION</div>
       <img src="sih_logo_transparent.png" class="sih-logo-img" />
     </div>
 
-    <div class="main-heading-blue">❖Proposed Solution (Describe your Idea/Solution/Prototype)</div>
+    <div style="display: flex; gap: 6mm; height: 124mm;">
+      <!-- Left Column: Problem Statement & Why is it different? -->
+      <div style="width: 48%; display: flex; flex-direction: column;">
+        <div class="orange-header-banner">Problem Statement</div>
+        <div class="card-box" style="margin-bottom: 3.5mm; font-size: 10pt; line-height: 1.45; font-family: Arial, sans-serif; color: #1e293b;">
+          <div style="margin-bottom: 2mm;">• <strong>Massive Volume Blindspot:</strong> 105,000+ MPLADS works nationwide make exhaustive manual scrutiny mathematically impossible.</div>
+          <div style="margin-bottom: 2mm;">• <strong>Lagged Sample Autopsies:</strong> Sample-based reviews occur 12–24 months after fund disbursement when funds are already gone.</div>
+          <div style="margin-bottom: 2mm;">• <strong>Data Siloing:</strong> Financial vouchers, execution milestone timelines, and contractor details live in disconnected databases.</div>
+          <div>• <strong>Contextual Nuance:</strong> High expenditure alone is not misconduct; true anomaly detection requires multi-dimensional baseline benchmarking.</div>
+        </div>
 
-    <div class="cards-3-col">
-      <div class="card-box">
-        <h4>• Detailed explanation of the proposed solution</h4>
-        <ul>
-          <li><strong>Dual-Layer Hybrid Intelligence:</strong> Merges a 3-model unsupervised ML ensemble (Isolation Forest 45%, Profile-Deduplicated LOF 35%, PCA 20%) with 5 codified statutory CAG & GFR rules.</li>
-          <li><strong>Real-Time Pre-Sanction Gatekeeper:</strong> Screens 100% of public works transactions before fund disbursement, replacing 24-month delayed sample autopsies.</li>
-          <li><strong>National Ingestion Scope:</strong> Trained and validated on 105,000 authentic civil works across all 33 States & UTs (2019-2024), monitoring ₹6,260 Cr in scheme capital.</li>
-        </ul>
+        <div class="orange-header-banner">Why is it different?</div>
+        <div class="card-box" style="font-size: 9.8pt; line-height: 1.45; font-family: Arial, sans-serif; color: #1e293b;">
+          <div style="margin-bottom: 2mm;"><strong style="color: #ea580c;">🚨 March Rush Radar:</strong> World's first temporal forensics engine catching fiscal-dump sanction surges before March 31.</div>
+          <div style="margin-bottom: 2mm;"><strong style="color: #9333ea;">⏳ Chronic Dormancy Engine:</strong> Pinpoints long-stalled projects (>3 years, ₹287 Cr) for immediate statutory clawback and reallocation.</div>
+          <div style="margin-bottom: 2mm;"><strong style="color: #0284c7;">📍 Duplicate / Cluster Signals:</strong> Geospatial NLP groups repeated works in identical villages to stop duplicate contractor billing.</div>
+          <div><strong style="color: #059669;">🗣️ Bilingual + Explainable:</strong> Translates complex AI math into plain legal English and सरल हिंदी directives with one-click CAG dossiers.</div>
+        </div>
       </div>
 
-      <div class="card-box">
-        <h4>• How it addresses the problem</h4>
-        <ul>
-          <li><strong>Solves the 5% Audit Blindspot:</strong> Traditional CAG audits cover under 8% of transactions after money has left; our system audits 100% of works in <15ms.</li>
-          <li><strong>Stops GFR 149 Evasion:</strong> Automatically catches contract-splitting intentionally priced at ₹4.80L–₹4.99L or ₹9.80L–₹9.99L to bypass mandatory GeM e-tenders.</li>
-          <li><strong>Prevents Ghost Duplication:</strong> Geospatial NLP detects identical works repeated in the same village/block to block duplicate contractor billing.</li>
-        </ul>
-      </div>
+      <!-- Right Column: Idea/Approach & Architecture Hub -->
+      <div style="width: 52%; display: flex; flex-direction: column;">
+        <div class="orange-header-banner">Idea/Approach</div>
+        
+        <!-- 5-Step Process Flow -->
+        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 2.5mm 3.5mm; margin-bottom: 2.5mm; font-family: Arial, sans-serif;">
+          <div style="display: flex; align-items: center; margin-bottom: 1.5mm;">
+            <div style="background: #2563eb; color: #fff; font-weight: bold; font-size: 8.5pt; padding: 1mm 2.5mm; border-radius: 4px; width: 14mm; text-align: center; margin-right: 3mm;">1 INGEST</div>
+            <div style="font-size: 9.5pt; color: #1e293b;"><strong>MoSPI e-SAKSHI & Public Records:</strong> Ingests 105,000 national works across all 33 States/UTs.</div>
+          </div>
+          <div style="display: flex; align-items: center; margin-bottom: 1.5mm;">
+            <div style="background: #0891b2; color: #fff; font-weight: bold; font-size: 8.5pt; padding: 1mm 2.5mm; border-radius: 4px; width: 14mm; text-align: center; margin-right: 3mm;">2 CLEAN</div>
+            <div style="font-size: 9.5pt; color: #1e293b;"><strong>Feature Engineering:</strong> Computes cost-per-unit medians, GFR 149 proximity, and delay days.</div>
+          </div>
+          <div style="display: flex; align-items: center; margin-bottom: 1.5mm;">
+            <div style="background: #7c3aed; color: #fff; font-weight: bold; font-size: 8.5pt; padding: 1mm 2.5mm; border-radius: 4px; width: 14mm; text-align: center; margin-right: 3mm;">3 DETECT</div>
+            <div style="font-size: 9.5pt; color: #1e293b;"><strong>Dual Hybrid Intelligence:</strong> Isolation Forest (45%), LOF (35%), PCA (20%) + 5 codified CAG rules.</div>
+          </div>
+          <div style="display: flex; align-items: center; margin-bottom: 1.5mm;">
+            <div style="background: #ea580c; color: #fff; font-weight: bold; font-size: 8.5pt; padding: 1mm 2.5mm; border-radius: 4px; width: 14mm; text-align: center; margin-right: 3mm;">4 PRIORITIZE</div>
+            <div style="font-size: 9.5pt; color: #1e293b;"><strong>Explainable Risk Stratification:</strong> Generates calibrated 0-100 scores with concrete violation causes.</div>
+          </div>
+          <div style="display: flex; align-items: center;">
+            <div style="background: #16a34a; color: #fff; font-weight: bold; font-size: 8.5pt; padding: 1mm 2.5mm; border-radius: 4px; width: 14mm; text-align: center; margin-right: 3mm;">5 VERIFY</div>
+            <div style="font-size: 9.5pt; color: #1e293b;"><strong>Officer Workflow & CAG Dossier:</strong> Equips vigilance teams with printable, court-admissible audit reports.</div>
+          </div>
+        </div>
 
-      <div class="card-box">
-        <h4>• Innovation and uniqueness of the solution</h4>
-        <ul>
-          <li>🚨 <strong>The "March Rush" Radar:</strong> First-of-its-kind temporal forensics detecting Q4 fiscal-dump sanctions before March 31 (3,111 works caught nationwide).</li>
-          <li>⏳ <strong>Chronic Dormancy Engine:</strong> Pinpointed ₹287 Cr trapped in 5,960 works stalled >3 years from 2019–2021 for fund clawback and reallocation.</li>
-          <li>🇮🇳 <strong>Bilingual Usability:</strong> Instant plain-language legal directives (सरल हिंदी + English) with one-click printable official CAG dossiers.</li>
-        </ul>
+        <!-- 6-Module Hub Graphic -->
+        <div style="text-align: center;">
+          <img src="arch_hub.png" style="width: 100%; max-height: 48mm; object-fit: contain;" />
+        </div>
       </div>
     </div>
 
@@ -341,7 +303,8 @@ html_content = """<!DOCTYPE html>
   </div>
 
   <!-- =========================================================
-       SLIDE 3: TECHNICAL APPROACH (Screenshot 4 - Flowchart)
+       SLIDE 3: DATA FLOW, PROTOTYPE & TECHNOLOGY STACK
+       (Embedded Winning Slide matching WhatsApp Reference)
        ========================================================= -->
   <div class="slide">
     <div class="slide-header">
@@ -350,72 +313,36 @@ html_content = """<!DOCTYPE html>
       <img src="sih_logo_transparent.png" class="sih-logo-img" />
     </div>
 
-    <div style="font-size: 15pt; font-weight: bold; margin-bottom: 2mm;">
-      • Technologies to be used (e.g. programming languages, frameworks, hardware)
-    </div>
-    <div style="font-size: 12pt; line-height: 1.5; color: #1e293b; margin-left: 5mm; margin-bottom: 4mm;">
-      - <strong>AI / ML Decision Engine:</strong> Scikit-learn (Isolation Forest 300 trees, Profile-Deduplicated LOF, PCA SVD), Joblib, NumPy, Pandas<br>
-      - <strong>Backend & APIs:</strong> FastAPI (High-Performance Asynchronous Python 3.12), SQLAlchemy ORM, Pydantic V2 schemas, Uvicorn<br>
-      - <strong>Database & Ingestion:</strong> PostgreSQL 16 (105k works, 557 seats), MoSPI e-SAKSHI live CDC scraper (REST API)<br>
-      - <strong>Frontend & Geospatial GIS:</strong> React 18, Vite, Leaflet Geospatial GIS, Recharts Data Visualizer (100% Offline Demo Resilient)
-    </div>
+    <div style="display: flex; gap: 6mm; height: 124mm;">
+      <!-- Left Column: Data Flow (2 Flowcharts) -->
+      <div style="width: 48%; display: flex; flex-direction: column;">
+        <div class="orange-header-banner">Data Flow</div>
+        
+        <!-- Flowchart 1: Preprocessing & Detection Pipeline -->
+        <div style="margin-bottom: 2mm; text-align: center; background: #fff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 1.5mm;">
+          <img src="dataflow_pipeline.png" style="width: 100%; max-height: 54mm; object-fit: contain;" />
+        </div>
 
-    <div style="font-size: 15pt; font-weight: bold; margin-bottom: 2mm;">
-      • Methodology and process for implementation (Flow Charts / Architecture Workflow)
-    </div>
-
-    <div class="flowchart-container">
-      <div class="flow-step">
-        <div class="flow-step-title">1. Data Ingestion</div>
-        <div class="flow-step-body">
-          • MoSPI e-SAKSHI API<br>
-          • 105,000 Real Works<br>
-          • Deduplication & NLP<br>
-          • Completeness Index
+        <!-- Flowchart 2: ML Ensemble Decision Tree -->
+        <div style="text-align: center; background: #fff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 1.5mm;">
+          <img src="ml_ensemble_flow.png" style="width: 100%; max-height: 48mm; object-fit: contain;" />
         </div>
       </div>
-      <div class="flow-arrow">➔</div>
 
-      <div class="flow-step">
-        <div class="flow-step-title">2. Feature Engineering</div>
-        <div class="flow-step-body">
-          • Relative Median Ratio<br>
-          • GFR 149 Proximity Flag<br>
-          • Village Cluster Match<br>
-          • Delay Since Rec. (>180d)
+      <!-- Right Column: Prototype (Real Screens) & Technology Stack -->
+      <div style="width: 52%; display: flex; flex-direction: column;">
+        <div class="orange-header-banner">Prototype</div>
+        
+        <!-- 4 Real Working App Mockups -->
+        <div style="text-align: center; margin-bottom: 2mm;">
+          <img src="proto_grid_4screens.png" style="width: 100%; max-height: 52mm; object-fit: contain;" />
         </div>
-      </div>
-      <div class="flow-arrow">➔</div>
 
-      <div class="flow-step">
-        <div class="flow-step-title">3. Dual Hybrid ML</div>
-        <div class="flow-step-body">
-          • Isolation Forest (45%)<br>
-          • Deduplicated LOF (35%)<br>
-          • PCA Residuals (20%)<br>
-          • 5 Codified CAG Rules
-        </div>
-      </div>
-      <div class="flow-arrow">➔</div>
-
-      <div class="flow-step">
-        <div class="flow-step-title">4. Temporal Forensics</div>
-        <div class="flow-step-body">
-          • 'March Rush' Radar<br>
-          • Chronic Dormancy (>3y)<br>
-          • Pre-Poll Surges<br>
-          • 6-Yr Longitudinal Scan
-        </div>
-      </div>
-      <div class="flow-arrow">➔</div>
-
-      <div class="flow-step">
-        <div class="flow-step-title">5. Bilingual Action</div>
-        <div class="flow-step-body">
-          • English + सरल हिंदी<br>
-          • Statutory Directives<br>
-          • Printable CAG Dossier<br>
-          • AI Simulator Sandbox
+        <div class="orange-header-banner">Technology Stack</div>
+        
+        <!-- Tech Stack Hub -->
+        <div style="text-align: center;">
+          <img src="tech_stack_hub.png" style="width: 100%; max-height: 49mm; object-fit: contain;" />
         </div>
       </div>
     </div>
@@ -427,7 +354,7 @@ html_content = """<!DOCTYPE html>
   </div>
 
   <!-- =========================================================
-       SLIDE 4: FEASIBILITY AND VIABILITY (Screenshot 3)
+       SLIDE 4: FEASIBILITY AND VIABILITY (Official SIH Template)
        ========================================================= -->
   <div class="slide">
     <div class="slide-header">
@@ -439,16 +366,16 @@ html_content = """<!DOCTYPE html>
     <div style="font-size: 15pt; font-weight: bold; margin-bottom: 2mm;">
       • Analysis of the feasibility of the idea
     </div>
-    <div style="font-size: 12pt; line-height: 1.5; margin-left: 6mm; margin-bottom: 5mm; color: #1e293b;">
-      - <strong>Data Feasibility:</strong> 100% validated on authentic MoSPI datasets (60,359 baseline works expanded to 105,000 multi-year records spanning 2019-2024 across all 33 States/UTs).<br>
-      - <strong>Technical Scalability:</strong> Sub-second inference (<15ms per work), allowing seamless real-time pre-sanction screening as a plug-in inside e-SAKSHI.<br>
+    <div style="font-size: 11.5pt; line-height: 1.45; margin-left: 6mm; margin-bottom: 4mm; color: #1e293b;">
+      - <strong>Data Feasibility:</strong> 100% validated on authentic MoSPI datasets (expanded to 105,000 multi-year records spanning 2019-2024 across all 33 States/UTs).<br>
+      - <strong>Technical Scalability:</strong> Sub-second inference (&lt;15ms per work), allowing seamless real-time pre-sanction screening as a plug-in inside e-SAKSHI.<br>
       - <strong>Zero Extra Burden:</strong> Requires zero additional manual forms from MPs or district officers; extracts existing mandatory data fields.
     </div>
 
     <div style="font-size: 15pt; font-weight: bold; margin-bottom: 2mm;">
       • Potential challenges and risks
     </div>
-    <div style="font-size: 12pt; line-height: 1.5; margin-left: 6mm; margin-bottom: 5mm; color: #1e293b;">
+    <div style="font-size: 11.5pt; line-height: 1.45; margin-left: 6mm; margin-bottom: 4mm; color: #1e293b;">
       - <strong>Algorithmic Risk (Zero-Distance KNN Collapse):</strong> Public works have thousands of identical repetitive civil works (handpumps) that distort standard KNN distance calculations.<br>
       - <strong>Operational Risk (Auditor Adoption):</strong> District vigilance officers reject black-box AI algorithms because they cannot legally justify scores in parliamentary reviews.<br>
       - <strong>False Positive Risk:</strong> Legitimate mega-projects (e.g. ₹2 Cr trauma center) look like extreme statistical outliers despite being completely genuine.
@@ -457,7 +384,7 @@ html_content = """<!DOCTYPE html>
     <div style="font-size: 15pt; font-weight: bold; margin-bottom: 2mm;">
       • Strategies for overcoming these challenges
     </div>
-    <div style="font-size: 12pt; line-height: 1.5; margin-left: 6mm; color: #1e293b;">
+    <div style="font-size: 11.5pt; line-height: 1.45; margin-left: 6mm; color: #1e293b;">
       - <strong>Profile-Deduplicated LOF:</strong> Groups identical civil works profiles into canonical representations before KNN, preserving true neighborhood reachability density.<br>
       - <strong>Bilingual Plain-Language Diagnostics:</strong> Translates mathematical metrics into plain English and सरल हिंदी with exact statutory CAG citations (GFR 149, Para 5.2).<br>
       - <strong>Dual-Layer Hybrid Logic & Feedback Loop:</strong> Statutory rules validate legitimate high-budget works; human officer resolutions dynamically calibrate decision thresholds.
@@ -470,7 +397,7 @@ html_content = """<!DOCTYPE html>
   </div>
 
   <!-- =========================================================
-       SLIDE 5: IMPACT AND BENEFITS (Screenshot 5)
+       SLIDE 5: IMPACT AND BENEFITS (Official SIH Template)
        ========================================================= -->
   <div class="slide">
     <div class="slide-header">
@@ -506,48 +433,120 @@ html_content = """<!DOCTYPE html>
   </div>
 
   <!-- =========================================================
-       SLIDE 6: RESEARCH AND REFERENCES (Thumbnail 6)
+       SLIDE 6: OFFICER / AUDITOR WORKFLOW
+       (Exact Match to user's more flowcharts.pptx Slide 6)
        ========================================================= -->
   <div class="slide">
     <div class="slide-header">
       <div class="team-oval">Team<br>RunTime<br>Terror</div>
-      <div class="slide-title-center">RESEARCH AND REFERENCES</div>
+      <div style="flex-grow: 1; text-align: center;">
+        <div class="slide-title-center" style="font-size: 21pt;">OFFICER / AUDITOR WORKFLOW</div>
+        <div class="slide-subtitle-center">How a district vigilance officer or auditor moves from a national signal to a CAG-ready case</div>
+      </div>
       <img src="sih_logo_transparent.png" class="sih-logo-img" />
     </div>
 
-    <div style="font-size: 16pt; font-weight: bold; margin-bottom: 4mm;">
-      • Details / Links of the references and research work
+    <!-- 7 Workflow Step Cards -->
+    <div style="display: flex; justify-content: space-between; gap: 2.5mm; margin-top: 3mm; margin-bottom: 5mm;">
+      <!-- Step 1 -->
+      <div style="flex: 1; background: #f0f9ff; border: 1.5px solid #0284c7; border-radius: 8px; padding: 3mm 2mm; text-align: center; height: 50mm; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="width: 10mm; height: 10mm; background: #0284c7; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 2mm auto; font-weight: bold; font-size: 11pt;">➔</div>
+          <div style="font-weight: bold; font-size: 9.5pt; color: #0369a1; margin-bottom: 2mm;">LOGIN</div>
+          <div style="font-size: 8pt; color: #475569; line-height: 1.3;">Secure role-based auditor access</div>
+        </div>
+        <div style="font-size: 8pt; font-weight: bold; color: #0284c7;">1</div>
+      </div>
+
+      <!-- Step 2 -->
+      <div style="flex: 1; background: #ecfeff; border: 1.5px solid #0891b2; border-radius: 8px; padding: 3mm 2mm; text-align: center; height: 50mm; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="width: 10mm; height: 10mm; background: #0891b2; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 2mm auto; font-weight: bold; font-size: 11pt;">📍</div>
+          <div style="font-weight: bold; font-size: 9.5pt; color: #0e7490; margin-bottom: 2mm;">GIS HEATMAP</div>
+          <div style="font-size: 8pt; color: #475569; line-height: 1.3;">See risk intensity across 33 States / UTs</div>
+        </div>
+        <div style="font-size: 8pt; font-weight: bold; color: #0891b2;">2</div>
+      </div>
+
+      <!-- Step 3 -->
+      <div style="flex: 1; background: #f0fdfa; border: 1.5px solid #0d9488; border-radius: 8px; padding: 3mm 2mm; text-align: center; height: 50mm; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="width: 10mm; height: 10mm; background: #0d9488; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 2mm auto; font-weight: bold; font-size: 11pt;">📋</div>
+          <div style="font-weight: bold; font-size: 9.5pt; color: #0f766e; margin-bottom: 2mm;">WORKS EXPLORER</div>
+          <div style="font-size: 8pt; color: #475569; line-height: 1.3;">Search, filter & compare ML vs CAG scores</div>
+        </div>
+        <div style="font-size: 8pt; font-weight: bold; color: #0d9488;">3</div>
+      </div>
+
+      <!-- Step 4 -->
+      <div style="flex: 1; background: #fff7ed; border: 1.5px solid #ea580c; border-radius: 8px; padding: 3mm 2mm; text-align: center; height: 50mm; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="width: 10mm; height: 10mm; background: #ea580c; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 2mm auto; font-weight: bold; font-size: 11pt;">⚠️</div>
+          <div style="font-weight: bold; font-size: 9.5pt; color: #c2410c; margin-bottom: 2mm;">FLAGGED WORK</div>
+          <div style="font-size: 8pt; color: #475569; line-height: 1.3;">Drill into the work-level evidence</div>
+        </div>
+        <div style="font-size: 8pt; font-weight: bold; color: #ea580c;">4</div>
+      </div>
+
+      <!-- Step 5 -->
+      <div style="flex: 1; background: #fefce8; border: 1.5px solid #ca8a04; border-radius: 8px; padding: 3mm 2mm; text-align: center; height: 50mm; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="width: 10mm; height: 10mm; background: #ca8a04; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 2mm auto; font-weight: bold; font-size: 11pt;">🤖</div>
+          <div style="font-weight: bold; font-size: 9.5pt; color: #a16207; margin-bottom: 2mm;">AI SIMULATOR</div>
+          <div style="font-size: 8pt; color: #475569; line-height: 1.3;">Test budget, delay & village what-ifs</div>
+        </div>
+        <div style="font-size: 8pt; font-weight: bold; color: #ca8a04;">5</div>
+      </div>
+
+      <!-- Step 6 -->
+      <div style="flex: 1; background: #faf5ff; border: 1.5px solid #9333ea; border-radius: 8px; padding: 3mm 2mm; text-align: center; height: 50mm; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="width: 10mm; height: 10mm; background: #9333ea; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 2mm auto; font-weight: bold; font-size: 11pt;">📂</div>
+          <div style="font-weight: bold; font-size: 9.5pt; color: #7e22ce; margin-bottom: 2mm;">CASE MANAGEMENT</div>
+          <div style="font-size: 8pt; color: #475569; line-height: 1.3;">Update status + record observations</div>
+        </div>
+        <div style="font-size: 8pt; font-weight: bold; color: #9333ea;">6</div>
+      </div>
+
+      <!-- Step 7 -->
+      <div style="flex: 1; background: #f0fdf4; border: 1.5px solid #16a34a; border-radius: 8px; padding: 3mm 2mm; text-align: center; height: 50mm; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="width: 10mm; height: 10mm; background: #16a34a; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 2mm auto; font-weight: bold; font-size: 11pt;">📄</div>
+          <div style="font-weight: bold; font-size: 9.5pt; color: #15803d; margin-bottom: 2mm;">CAG DOSSIER</div>
+          <div style="font-size: 8pt; color: #475569; line-height: 1.3;">Generate / print formal screening report</div>
+        </div>
+        <div style="font-size: 8pt; font-weight: bold; color: #16a34a;">7</div>
+      </div>
     </div>
 
-    <div style="display: flex; flex-direction: column; gap: 3.5mm;">
-      <div class="card-box" style="padding: 2.5mm 4mm;">
-        <strong style="color: #1d4477; font-size: 11pt;">1. Ministry of Statistics and Programme Implementation (MoSPI), Government of India</strong><br>
-        <span style="font-size: 10pt; color: #334155;">Guidelines on Member of Parliament Local Area Development Scheme (MPLADS) — Statutory provisions on Para 3.12 (Tender procedures), Para 5.2 (45-Day Sanction SLA), and Para 2.11 (Permissible works). URL: mplads.gov.in</span>
-      </div>
-
-      <div class="card-box" style="padding: 2.5mm 4mm;">
-        <strong style="color: #1d4477; font-size: 11pt;">2. Office of the Comptroller and Auditor General of India (CAG)</strong><br>
-        <span style="font-size: 10pt; color: #334155;">Performance Audit Report on Member of Parliament Local Area Development Scheme — Reports detailing chronic fund dormancy, contract splitting, March Rush fiscal dumps, and unspent constituency balances. URL: cag.gov.in</span>
-      </div>
-
-      <div class="card-box" style="padding: 2.5mm 4mm;">
-        <strong style="color: #1d4477; font-size: 11pt;">3. Ministry of Finance, Department of Expenditure, Government of India</strong><br>
-        <span style="font-size: 10pt; color: #334155;">General Financial Rules (GFR 2017) — Rule 149 governing mandatory procurement of goods & services through Government e-Marketplace (GeM) and statutory e-tendering thresholds (₹5 Lakh / ₹10 Lakh).</span>
-      </div>
-
-      <div class="card-box" style="padding: 2.5mm 4mm;">
-        <strong style="color: #1d4477; font-size: 11pt;">4. Liu, F. T., Ting, K. M., & Zhou, Z. H. (IEEE ICDM)</strong><br>
-        <span style="font-size: 10pt; color: #334155;">'Isolation Forest' — Foundations of unsupervised isolation tree algorithms for multi-dimensional anomaly detection without normality assumptions. IEEE International Conference on Data Mining.</span>
-      </div>
-
-      <div class="card-box" style="padding: 2.5mm 4mm;">
-        <strong style="color: #1d4477; font-size: 11pt;">5. Breunig, M. M., Kriegel, H. P., Ng, R. T., & Sander, J. (ACM SIGMOD)</strong><br>
-        <span style="font-size: 10pt; color: #334155;">'LOF: Identifying Density-Based Local Outliers' — Formulations of Local Outlier Factor and local reachability density metrics in spatial data structures.</span>
-      </div>
-
-      <div class="card-box" style="padding: 2.5mm 4mm;">
-        <strong style="color: #1d4477; font-size: 11pt;">6. Open Government Data (OGD) Platform India (data.gov.in)</strong><br>
-        <span style="font-size: 10pt; color: #334155;">Authenticated datasets on MPLADS physical progress, financial release vs expenditure, and constituency-wise project archives (2019–2024).</span>
+    <!-- Live Prototype Callout Box -->
+    <div style="border: 2px solid #0284c7; border-radius: 10px; padding: 3.5mm 5mm; background: #ffffff;">
+      <div style="display: flex; align-items: center; gap: 4mm;">
+        <div style="border: 2px solid #0284c7; border-radius: 6px; padding: 2mm 3mm; font-weight: bold; color: #0284c7; font-size: 9pt; text-align: center; width: 38mm; flex-shrink: 0;">
+          LIVE PROTOTYPE CALLOUT
+        </div>
+        <div style="display: flex; justify-content: space-between; flex-grow: 1; gap: 3mm;">
+          <div style="flex: 1; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1.5mm;">
+            <div style="font-size: 7.5pt; font-weight: bold; background: #0284c7; color: #fff; border-radius: 3px; padding: 0.5mm 1mm; margin-bottom: 1mm;">GIS</div>
+            <div style="font-size: 8pt; color: #1e293b;">Leaflet India anomaly heatmap</div>
+          </div>
+          <div style="flex: 1; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1.5mm;">
+            <div style="font-size: 7.5pt; font-weight: bold; background: #0284c7; color: #fff; border-radius: 3px; padding: 0.5mm 1mm; margin-bottom: 1mm;">EXPLORER</div>
+            <div style="font-size: 8pt; color: #1e293b;">105k searchable works</div>
+          </div>
+          <div style="flex: 1; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1.5mm;">
+            <div style="font-size: 7.5pt; font-weight: bold; background: #0284c7; color: #fff; border-radius: 3px; padding: 0.5mm 1mm; margin-bottom: 1mm;">SIMULATOR</div>
+            <div style="font-size: 8pt; color: #1e293b;">Live what-if risk recalculation</div>
+          </div>
+          <div style="flex: 1; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1.5mm;">
+            <div style="font-size: 7.5pt; font-weight: bold; background: #0284c7; color: #fff; border-radius: 3px; padding: 0.5mm 1mm; margin-bottom: 1mm;">QUEUE</div>
+            <div style="font-size: 8pt; color: #1e293b;">UNDER REVIEW / INSPECTION</div>
+          </div>
+          <div style="flex: 1; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1.5mm;">
+            <div style="font-size: 7.5pt; font-weight: bold; background: #0284c7; color: #fff; border-radius: 3px; padding: 0.5mm 1mm; margin-bottom: 1mm;">DOSSIER</div>
+            <div style="font-size: 8pt; color: #1e293b;">Printable audit screening report</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -558,44 +557,80 @@ html_content = """<!DOCTYPE html>
   </div>
 
   <!-- =========================================================
-       SLIDE 7: WORKING PROTOTYPE & TEAM
+       SLIDE 7: RESEARCH REFERENCES & TEAM RESPONSIBILITIES
        ========================================================= -->
   <div class="slide">
     <div class="slide-header">
       <div class="team-oval">Team<br>RunTime<br>Terror</div>
-      <div class="slide-title-center">WORKING PROTOTYPE & TEAM</div>
+      <div class="slide-title-center">RESEARCH REFERENCES & TEAM</div>
       <img src="sih_logo_transparent.png" class="sih-logo-img" />
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6mm;">
-      <div class="card-box">
-        <h4 style="font-size: 13.5pt;">🖥️ Live Functional Prototype Modules</h4>
-        <ul style="font-size: 11pt; line-height: 1.55;">
-          <li><strong>Geospatial GIS Anomaly Heatmap:</strong> Interactive Leaflet India map rendering risk intensity across all 33 States/UTs with constituency drill-downs.</li>
-          <li><strong>Works Anomaly Explorer (105k):</strong> Full-text searchable, paginated table with real-time ML vs CAG score comparisons and multi-year temporal filtering (2019-2024).</li>
-          <li><strong>Live AI Audit Simulator:</strong> Interactive 'What-If' sandbox allowing evaluators to adjust project budget, delay, and village duplication to test ML risk recalculation live.</li>
-          <li><strong>Officer Case Management Queue:</strong> Field-ready case tracking (UNDER REVIEW, SITE INSPECTION, FALSE POSITIVE) logging auditor observations.</li>
-          <li><strong>Official Printable CAG Dossiers:</strong> One-click printable audit screening reports with formal case IDs, checklists, and sign/stamp fields.</li>
-        </ul>
+    <div style="display: flex; gap: 8mm; height: 114mm;">
+      <!-- Left Column: Statutory & Academic References -->
+      <div style="width: 50%;">
+        <div style="font-size: 13pt; font-weight: bold; margin-bottom: 2.5mm; color: #1e293b;">
+          • Statutory Governance & Academic Citations
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2.5mm;">
+          <div class="card-box" style="padding: 2mm 3mm;">
+            <strong style="color: #1d4477; font-size: 9.5pt;">1. MoSPI, Government of India (Guidelines on MPLADS)</strong><br>
+            <span style="font-size: 8.5pt; color: #334155;">Para 3.12 (Tendering procedures), Para 5.2 (45-Day Sanction SLA), and Para 2.11 (Permissible public community assets).</span>
+          </div>
+
+          <div class="card-box" style="padding: 2mm 3mm;">
+            <strong style="color: #1d4477; font-size: 9.5pt;">2. Office of the Comptroller & Auditor General of India (CAG)</strong><br>
+            <span style="font-size: 8.5pt; color: #334155;">Performance Audit Reports on MPLADS: Fund dormancy, tender splitting, and March Rush fiscal dump analyses.</span>
+          </div>
+
+          <div class="card-box" style="padding: 2mm 3mm;">
+            <strong style="color: #1d4477; font-size: 9.5pt;">3. Ministry of Finance, Department of Expenditure (GFR 2017)</strong><br>
+            <span style="font-size: 8.5pt; color: #334155;">Rule 149: Mandatory GeM public procurement thresholds (&lt;₹5 Lakh / ₹10 Lakh) preventing artificial work fragmentation.</span>
+          </div>
+
+          <div class="card-box" style="padding: 2mm 3mm;">
+            <strong style="color: #1d4477; font-size: 9.5pt;">4. Liu, F. T., Ting, K. M., & Zhou, Z. H. (IEEE ICDM)</strong><br>
+            <span style="font-size: 8.5pt; color: #334155;">'Isolation Forest' — Foundations of unsupervised isolation tree algorithms for multi-dimensional anomaly detection.</span>
+          </div>
+        </div>
       </div>
 
-      <div class="card-box">
-        <h4 style="font-size: 13.5pt;">👥 Team Members & Project Responsibilities</h4>
-        <ul style="font-size: 11pt; line-height: 1.6;">
-          <li><strong>Team Leader:</strong> Akshat Mittal<br><span style="font-size: 9.5pt; color:#475569;">Lead AI/ML Architect & Backend Engine (FastAPI)</span></li>
-          <li><strong>Member 2:</strong> Khushi<br><span style="font-size: 9.5pt; color:#475569;">Data Pipeline, Cleaning & MoSPI Scraper (Python)</span></li>
-          <li><strong>Member 3:</strong> Aryan Shahi<br><span style="font-size: 9.5pt; color:#475569;">Frontend Architecture, React 18 & Recharts Visualizer</span></li>
-          <li><strong>Member 4:</strong> Abhay Pratap<br><span style="font-size: 9.5pt; color:#475569;">Geospatial GIS Mapping Specialist (Leaflet API)</span></li>
-          <li><strong>Member 5:</strong> Gaurav Shukla<br><span style="font-size: 9.5pt; color:#475569;">CAG Statutory Rules & GFR Domain Compliance</span></li>
-          <li><strong>Member 6:</strong> Shreya Srivastava<br><span style="font-size: 9.5pt; color:#475569;">Quality Assurance, Audit Testing & Evaluation Lead</span></li>
-        </ul>
+      <!-- Right Column: Full Team Roster -->
+      <div style="width: 50%;">
+        <div style="font-size: 13pt; font-weight: bold; margin-bottom: 2.5mm; color: #1e293b;">
+          • Team RunTime Terror (T106) Roster
+        </div>
+        <div class="card-box" style="padding: 3mm 4mm; height: 100mm; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="font-size: 10.5pt; font-weight: bold; color: #1d4477;">• Team Leader: Akshat Mittal</div>
+            <div style="font-size: 9pt; color: #475569; margin-left: 4mm;">Lead AI/ML Architect & Backend Engine (FastAPI, Scikit-Learn)</div>
+          </div>
+          <div>
+            <div style="font-size: 10.5pt; font-weight: bold; color: #1d4477;">• Member 2: Khushi</div>
+            <div style="font-size: 9pt; color: #475569; margin-left: 4mm;">Data Pipeline, MoSPI Scraper & Schema Cleaning (Python)</div>
+          </div>
+          <div>
+            <div style="font-size: 10.5pt; font-weight: bold; color: #1d4477;">• Member 3: Aryan Shahi</div>
+            <div style="font-size: 9pt; color: #475569; margin-left: 4mm;">Frontend Architecture, React 18 & Recharts Data Visualizer</div>
+          </div>
+          <div>
+            <div style="font-size: 10.5pt; font-weight: bold; color: #1d4477;">• Member 4: Abhay Pratap</div>
+            <div style="font-size: 9pt; color: #475569; margin-left: 4mm;">Geospatial GIS Specialist (Leaflet API & Heatmap Engine)</div>
+          </div>
+          <div>
+            <div style="font-size: 10.5pt; font-weight: bold; color: #1d4477;">• Member 5: Gaurav Shukla</div>
+            <div style="font-size: 9pt; color: #475569; margin-left: 4mm;">CAG Statutory Rules & GFR Domain Compliance Engineering</div>
+          </div>
+          <div>
+            <div style="font-size: 10.5pt; font-weight: bold; color: #1d4477;">• Member 6: Shreya Srivastava</div>
+            <div style="font-size: 9pt; color: #475569; margin-left: 4mm;">Quality Assurance, Audit Testing & Evaluation Lead</div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 6px; padding: 2.5mm 4mm; margin-top: 3.5mm; text-align: center;">
-      <strong style="color: #166534; font-size: 11pt;">
-        🎯 READY FOR NATIONAL DEPLOYMENT • TESTED ON 105,000 REAL MOSPI WORKS ACROSS ALL 33 STATES/UTS
-      </strong>
+    <div style="margin-top: 1mm; background: #ecfdf5; border: 1.5px solid #10b981; border-radius: 6px; padding: 1.5mm; text-align: center; font-size: 9.5pt; font-weight: bold; color: #047857;">
+      🎯 100% FUNCTIONAL PROTOTYPE • VALIDATED ON 105,000 REAL MOSPI WORKS ACROSS ALL 33 STATES & UTs
     </div>
 
     <div class="bottom-banner">
@@ -610,39 +645,45 @@ html_content = """<!DOCTYPE html>
 
 with open(html_path, "w", encoding="utf-8") as f:
     f.write(html_content)
-
 print(f"Wrote exact presentation HTML to {html_path}")
 
-chrome = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-
-# Generate T106 PDF
+chrome_exe = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 cmd_t106 = [
-    chrome,
+    chrome_exe,
     "--headless",
     "--disable-gpu",
     "--no-pdf-header-footer",
     f"--print-to-pdf={pdf_path_t106}",
     html_path
 ]
-
-print("Executing Chrome headless PDF print for T106 Deck...")
-res1 = subprocess.run(cmd_t106, capture_output=True, text=True)
-print("T106 PDF Returncode:", res1.returncode)
-
-# Also attempt main PDF if not locked
 cmd_main = [
-    chrome,
+    chrome_exe,
     "--headless",
     "--disable-gpu",
     "--no-pdf-header-footer",
     f"--print-to-pdf={pdf_path_main}",
     html_path
 ]
-try:
-    res2 = subprocess.run(cmd_main, capture_output=True, text=True)
-    print("Main PDF Returncode:", res2.returncode)
-except Exception as e:
-    print("Main PDF note:", e)
+cmd_win = [
+    chrome_exe,
+    "--headless",
+    "--disable-gpu",
+    "--no-pdf-header-footer",
+    f"--print-to-pdf={pdf_path_win}",
+    html_path
+]
+
+print("Executing Chrome headless PDF print for T106 Deck...")
+res_t106 = subprocess.run(cmd_t106, capture_output=True, text=True)
+print(f"T106 PDF Returncode: {res_t106.returncode}")
+
+print("Executing Chrome headless PDF print for Main Deck...")
+res_main = subprocess.run(cmd_main, capture_output=True, text=True)
+print(f"Main PDF Returncode: {res_main.returncode}")
+
+print("Executing Chrome headless PDF print for Winning Deck...")
+res_win = subprocess.run(cmd_win, capture_output=True, text=True)
+print(f"Winning PDF Returncode: {res_win.returncode}")
 
 if os.path.exists(pdf_path_t106):
     print(f"SUCCESS: Generated Exact SIH Presentation PDF at {pdf_path_t106} (Size: {os.path.getsize(pdf_path_t106)} bytes)")
